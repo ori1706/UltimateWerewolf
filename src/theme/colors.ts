@@ -1,0 +1,17 @@
+export const colors = {
+  background: '#0f0f14',
+  surface: '#1a1a24',
+  surfaceElevated: '#252532',
+  border: '#2e2e3d',
+  text: '#f4f4f8',
+  textMuted: '#9ca3af',
+  primary: '#8b5cf6',
+  primaryDark: '#6d28d9',
+  accent: '#f59e0b',
+  danger: '#ef4444',
+  success: '#22c55e',
+  village: '#3b82f6',
+  werewolf: '#dc2626',
+  neutral: '#a855f7',
+  lover: '#ec4899',
+};
