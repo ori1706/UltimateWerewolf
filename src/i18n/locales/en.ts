@@ -50,7 +50,7 @@ export const en = {
     rosterNamePlaceholder: 'Friday night crew',
     nextRoles: 'Choose Roles',
     seatingOrder: 'Seating order',
-    reorderHint: 'Drag the handle to arrange seating order — the phone passes clockwise around the table',
+    reorderHint: 'Long-press a row to reorder · Tap or ⋯ for photo options · Swipe left to delete',
     dragHandle: 'Drag to reorder',
   },
   roles: {
@@ -89,8 +89,11 @@ export const en = {
     },
   },
   settings: {
+    title: 'Game rules',
     revealDeadRoles: 'Reveal dead players\' roles',
     revealDeadRolesHint: 'When someone dies, show their role to everyone',
+    seerFullRole: 'Seer sees exact role',
+    seerFullRoleHint: 'Off: werewolf or not werewolf (Ultimate Werewolf default). On: shows the exact role.',
   },
   errors: {
     minPlayers: 'Need at least 5 players',
@@ -105,6 +108,13 @@ export const en = {
     selectOneTarget: 'Select one player',
     cannotProtectSame: 'Cannot protect the same player two nights in a row',
     cannotVoteSelf: 'You cannot vote for yourself',
+  },
+  phaseIntro: {
+    nightTitle: 'Night {{number}}',
+    nightSubtitle: 'The village sleeps. Pass the phone for night actions.',
+    dayTitle: 'Day {{number}}',
+    daySubtitle: 'The sun rises. Discuss what happened and find the werewolves.',
+    continue: 'Begin',
   },
   passPhone: {
     title: 'Pass the Phone',
@@ -138,6 +148,8 @@ export const en = {
     werewolf: 'Choose a player to eliminate tonight',
     wolfVoteHint: '🐾 = votes from werewolves who already chose',
     seer: 'Choose a player to inspect',
+    roleInspectionTeam: '{{name}} is {{result}}',
+    roleInspectionRole: '{{name}} is the {{role}}',
     seerResult: '{{name}} is {{result}}',
     werewolfResult: 'Werewolf',
     notWerewolfResult: 'Not a Werewolf',
@@ -189,7 +201,7 @@ export const en = {
     werewolfNoMajority: 'The werewolves could not agree on a victim — no one was killed.',
     werewolfKillSurvived: '{{name}} was targeted but survived (protected).',
     werewolfKillSucceeded: '{{name}} was killed by the werewolves.',
-    seerInspected: 'The Seer inspected {{name}} — {{result}}.',
+    seerInspected: 'The Seer learned: {{result}}.',
     playerDied: '{{name}} died ({{cause}}).',
     loverDied: '{{name}} died of heartbreak after {{partner}} died.',
     hunterShot: 'The Hunter {{hunter}} shot {{target}}.',

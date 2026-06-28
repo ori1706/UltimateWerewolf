@@ -1,35 +1,35 @@
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Button } from '@/src/components/Button';
+import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
 import { PlayerPicker } from '@/src/components/PlayerPicker';
 import { getPlayerById } from '@/src/game/rules';
+import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
 export default function HunterScreen() {
   const { t } = useTranslation();
-  const game = useGameStore((s) => s.game);
+  const game = useGamePhaseScreen('hunter');
   const submitHunterShot = useGameStore((s) => s.submitHunterShot);
   const [gateOpen, setGateOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!game) return;
-    if (game.phase === 'night') router.replace('/game/night');
-    else if (game.phase === 'day') router.replace('/game/day');
-    else if (game.phase === 'vote') router.replace('/game/vote');
-    else if (game.phase === 'gameOver') router.replace('/results');
-  }, [game?.phase]);
+    setGateOpen(false);
+    setSelected([]);
+  }, [game?.pendingHunterId]);
 
-  if (!game || game.phase !== 'hunter' || !game.pendingHunterId) {
+  if (!game || !game.pendingHunterId) {
     return null;
   }
 
   const hunter = getPlayerById(game.players, game.pendingHunterId);
-  if (!hunter) return null;
+  if (!hunter) {
+    return null;
+  }
 
   if (!gateOpen) {
     return (
@@ -42,7 +42,7 @@ export default function HunterScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <GameScreenLayout scroll>
       <Text style={styles.title}>{t('hunter.title')}</Text>
       <Text style={styles.subtitle}>
         {t('hunter.subtitle', { name: hunter.name })}
@@ -61,26 +61,16 @@ export default function HunterScreen() {
         onPress={() => {
           if (selected.length !== 1) return;
           submitHunterShot(selected[0]);
-          setSelected([]);
-          setGateOpen(false);
         }}
         disabled={selected.length !== 1}
         variant="danger"
         style={styles.btn}
       />
-    </ScrollView>
+    </GameScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
   title: {
     color: colors.danger,
     fontSize: 28,

@@ -52,7 +52,7 @@ export const he: TranslationKeys = {
     rosterNamePlaceholder: 'ערב שישי',
     nextRoles: 'בחר תפקידים',
     seatingOrder: 'סדר ישיבה',
-    reorderHint: 'גרור את הידית כדי לסדר את סדר הישיבה — הטלפון עובר עם כיוון השעון',
+    reorderHint: 'לחץ ארוך על שורה לסידור · הקש או ⋯ לאפשרויות תמונה · החלק שמאלה למחיקה',
     dragHandle: 'גרור לסידור מחדש',
   },
   roles: {
@@ -91,8 +91,11 @@ export const he: TranslationKeys = {
     },
   },
   settings: {
+    title: 'כללי משחק',
     revealDeadRoles: 'חשוף תפקידים של מתים',
     revealDeadRolesHint: 'כשמישהו מת, הצג את תפקידו לכולם',
+    seerFullRole: 'הרואה רואה תפקיד מדויק',
+    seerFullRoleHint: 'כבוי: זאב או לא זאב (ברירת מחדל). דלוק: מציג את התפקיד המדויק.',
   },
   errors: {
     minPlayers: 'נדרשים לפחות 5 שחקנים',
@@ -107,6 +110,13 @@ export const he: TranslationKeys = {
     selectOneTarget: 'בחר שחקן אחד',
     cannotProtectSame: 'לא ניתן להגן על אותו שחקן שני לילות ברצף',
     cannotVoteSelf: 'לא ניתן להצביע לעצמך',
+  },
+  phaseIntro: {
+    nightTitle: 'לילה {{number}}',
+    nightSubtitle: 'הכפר ישן. העבירו את הטלפון לפעולות לילה.',
+    dayTitle: 'יום {{number}}',
+    daySubtitle: 'השמש זורחת. דנו במה שקרה ומצאו את הזאבים.',
+    continue: 'התחל',
   },
   passPhone: {
     title: 'העבר את הטלפון',
@@ -140,6 +150,8 @@ export const he: TranslationKeys = {
     werewolf: 'בחר שחקן להשמיד הלילה',
     wolfVoteHint: '🐾 = קולות מזאבים שכבר בחרו',
     seer: 'בחר שחקן לבדוק',
+    roleInspectionTeam: '{{name}} הוא {{result}}',
+    roleInspectionRole: '{{name}} הוא ה{{role}}',
     seerResult: '{{name}} הוא {{result}}',
     werewolfResult: 'זאב',
     notWerewolfResult: 'לא זאב',
@@ -191,7 +203,7 @@ export const he: TranslationKeys = {
     werewolfNoMajority: 'הזאבים לא הגיעו לרוב — אף אחד לא נהרג.',
     werewolfKillSurvived: '{{name}} נבחר אך שרד (הוגן).',
     werewolfKillSucceeded: '{{name}} נהרג על ידי הזאבים.',
-    seerInspected: 'הרואה בדק את {{name}} — {{result}}.',
+    seerInspected: 'הרואה למד: {{result}}.',
     playerDied: '{{name}} מת ({{cause}}).',
     loverDied: '{{name}} מת משברון לב אחרי ש-{{partner}} מת.',
     hunterShot: 'הצייד {{hunter}} ירה ב-{{target}}.',

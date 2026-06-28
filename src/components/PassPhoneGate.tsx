@@ -1,6 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { PlayerAvatar } from './PlayerAvatar';
 import { Button } from './Button';
@@ -44,22 +45,25 @@ export function PassPhoneGate({
 
   if (revealed && children) {
     return (
-      <View style={styles.container}>
-        {children}
-        <Button
-          label={t('passPhone.gotIt')}
-          onPress={() => {
-            setRevealed(false);
-            onReady();
-          }}
-          style={styles.hideBtn}
-        />
-      </View>
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={styles.container}>
+          {children}
+          <Button
+            label={t('passPhone.gotIt')}
+            onPress={() => {
+              setRevealed(false);
+              onReady();
+            }}
+            style={styles.hideBtn}
+          />
+        </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.container}>
       <Text style={styles.title}>{t('passPhone.title')}</Text>
       <Text style={styles.subtitle}>{t('passPhone.subtitle')}</Text>
       <PlayerAvatar name={playerName} photoUri={photoUri} size={100} />
@@ -80,17 +84,21 @@ export function PassPhoneGate({
           style={styles.readyBtn}
         />
       )}
-    </View>
+      </View>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
   container: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
-    backgroundColor: colors.background,
   },
   title: {
     color: colors.textMuted,

@@ -79,8 +79,16 @@ export interface NightActionStep {
   completed: boolean;
 }
 
+export type RoleRevealAction = 'seerInspect';
+
+export type RoleRevealMode = 'teamBinary' | 'fullRole';
+
+export type RoleRevealSettings = Partial<Record<RoleRevealAction, RoleRevealMode>>;
+
 export interface GameSettings {
   revealDeadRoles: boolean;
+  /** Per-action reveal modes for roles that inspect or learn about others. */
+  roleReveal: RoleRevealSettings;
 }
 
 export type RoleCounts = Record<RoleId, number>;
@@ -89,7 +97,9 @@ export type WinResult = Team | 'lovers' | 'tanner';
 
 export interface SeerResult {
   targetId: string;
+  mode: RoleRevealMode;
   isWerewolf: boolean;
+  revealedRole?: RoleId;
 }
 
 export interface GameState {

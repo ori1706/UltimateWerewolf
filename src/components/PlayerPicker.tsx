@@ -37,10 +37,8 @@ export function PlayerPicker({
     <View style={styles.wrap}>
       {eligible.map((player) => {
         const selected = selectedIds.includes(player.id);
-        const disabled =
-          !selected &&
-          maxSelections > 0 &&
-          selectedIds.length >= maxSelections;
+        const atMax = maxSelections > 0 && selectedIds.length >= maxSelections;
+        const disabled = maxSelections !== 1 && !selected && atMax;
 
         const voteCount = voteCounts[player.id] ?? 0;
 

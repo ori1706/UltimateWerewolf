@@ -4,6 +4,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { LanguageSwitcher } from '@/src/components/LanguageSwitcher';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
+import { routeForPhase } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { useSettingsStore } from '@/src/store/settingsStore';
 import { colors } from '@/src/theme/colors';
@@ -35,12 +36,7 @@ export default function HomeScreen() {
             label={t('home.continueGame')}
             variant="secondary"
             onPress={() => {
-              const phase = game!.phase;
-              if (phase === 'roleAssign') router.push('/assign');
-              else if (phase === 'night') router.push('/game/night');
-              else if (phase === 'day') router.push('/game/day');
-              else if (phase === 'vote') router.push('/game/vote');
-              else if (phase === 'hunter') router.push('/game/hunter');
+              router.push(routeForPhase(game!.phase));
             }}
           />
         ) : null}

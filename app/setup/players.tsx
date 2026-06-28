@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -11,12 +11,11 @@ import {
   View,
 } from 'react-native';
 import DraggableFlatList, {
-  ScaleDecorator,
   type RenderItemParams,
 } from 'react-native-draggable-flatlist';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/src/components/Button';
-import { PlayerCard } from '@/src/components/PlayerCard';
+import { SetupPlayerRow } from '@/src/components/SetupPlayerRow';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
 import { MIN_PLAYERS } from '@/src/game/rules';
 import type { Player } from '@/src/game/types';
@@ -38,22 +37,46 @@ export default function PlayersSetupScreen() {
 
   const [name, setName] = useState('');
   const [rosterName, setRosterName] = useState('');
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [listData, setListData] = useState<Player[]>(setupPlayers);
 
-  const pickPhoto = async (playerId: string, useCamera: boolean) => {
-    const perm = useCamera
-      ? await ImagePicker.requestCameraPermissionsAsync()
-      : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+  useEffect(() => {
+    setListData((prev) => {
+      const prevOrder = prev.map((p) => p.id).join();
+      const nextOrder = setupPlayers.map((p) => p.id).join();
+      if (prevOrder !== nextOrder) {
+        return setupPlayers;
+      }
+      return prev.map((p) => setupPlayers.find((s) => s.id === p.id) ?? p);
+    });
+  }, [setupPlayers]);
 
-    const result = useCamera
-      ? await ImagePicker.launchCameraAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] })
-      : await ImagePicker.launchImageLibraryAsync({ quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+  const pickPhoto = useCallback(
+    async (playerId: string, useCamera: boolean) => {
+      const perm = useCamera
+        ? await ImagePicker.requestCameraPermissionsAsync()
+        : await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
 
-    if (!result.canceled && result.assets[0]) {
-      const uri = await persistPhotoUri(result.assets[0].uri);
-      updatePlayer(playerId, { photoUri: uri });
-    }
-  };
+      const result = useCamera
+        ? await ImagePicker.launchCameraAsync({
+            quality: 0.8,
+            allowsEditing: true,
+            aspect: [1, 1],
+          })
+        : await ImagePicker.launchImageLibraryAsync({
+            quality: 0.8,
+            allowsEditing: true,
+            aspect: [1, 1],
+          });
+
+      if (!result.canceled && result.assets[0]) {
+        const uri = await persistPhotoUri(result.assets[0].uri);
+        updatePlayer(playerId, { photoUri: uri });
+      }
+    },
+    [updatePlayer]
+  );
 
   const handleAdd = () => {
     const trimmed = name.trim();
@@ -69,57 +92,37 @@ export default function PlayersSetupScreen() {
     setName('');
   };
 
+  const toggleExpand = useCallback((id: string) => {
+    setExpandedId((current) => (current === id ? null : id));
+    Haptics.selectionAsync();
+  }, []);
+
   const handleDragEnd = useCallback(
     ({ data }: { data: Player[] }) => {
+      setListData(data);
       reorderPlayers(data);
+      setExpandedId(null);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     },
     [reorderPlayers]
   );
 
   const renderPlayer = useCallback(
-    ({ item, drag, isActive, getIndex }: RenderItemParams<Player>) => {
-      const index = getIndex() ?? 0;
-      return (
-        <ScaleDecorator>
-          <View style={[styles.playerRow, isActive && styles.playerRowActive]}>
-            <View style={styles.playerHeader}>
-              <View style={styles.seatBadge}>
-                <Text style={styles.seatNumber}>{index + 1}</Text>
-              </View>
-              <Pressable
-                onPressIn={drag}
-                style={styles.dragHandle}
-                accessibilityLabel={t('setup.dragHandle')}
-              >
-                <Text style={styles.dragHandleIcon}>⠿</Text>
-              </Pressable>
-            </View>
-            <PlayerCard player={item} />
-            <View style={styles.playerActions}>
-              <Pressable onPress={() => pickPhoto(item.id, false)} style={styles.smallBtn}>
-                <Text style={styles.smallBtnText}>{t('setup.photoFromLibrary')}</Text>
-              </Pressable>
-              <Pressable onPress={() => pickPhoto(item.id, true)} style={styles.smallBtn}>
-                <Text style={styles.smallBtnText}>{t('setup.photoFromCamera')}</Text>
-              </Pressable>
-              {item.photoUri ? (
-                <Pressable
-                  onPress={() => updatePlayer(item.id, { photoUri: undefined })}
-                  style={styles.smallBtn}
-                >
-                  <Text style={styles.smallBtnText}>{t('setup.removePhoto')}</Text>
-                </Pressable>
-              ) : null}
-              <Pressable onPress={() => removePlayer(item.id)} style={styles.deleteBtn}>
-                <Text style={styles.deleteText}>{t('common.delete')}</Text>
-              </Pressable>
-            </View>
-          </View>
-        </ScaleDecorator>
-      );
-    },
-    [pickPhoto, removePlayer, t, updatePlayer]
+    (params: RenderItemParams<Player>) => (
+      <SetupPlayerRow
+        {...params}
+        expanded={expandedId === params.item.id}
+        onToggleExpand={toggleExpand}
+        onPickLibrary={(id) => pickPhoto(id, false)}
+        onPickCamera={(id) => pickPhoto(id, true)}
+        onRemovePhoto={(id) => updatePlayer(id, { photoUri: undefined })}
+        onDelete={(id) => {
+          removePlayer(id);
+          setExpandedId(null);
+        }}
+      />
+    ),
+    [expandedId, pickPhoto, removePlayer, toggleExpand, updatePlayer]
   );
 
   const canContinue = setupPlayers.length >= MIN_PLAYERS;
@@ -138,7 +141,7 @@ export default function PlayersSetupScreen() {
         <Button label={t('common.add')} onPress={handleAdd} style={styles.addBtn} />
       </View>
 
-      {setupPlayers.length > 0 ? (
+      {listData.length > 0 ? (
         <View style={styles.orderSection}>
           <Text style={styles.orderTitle}>{t('setup.seatingOrder')}</Text>
           <Text style={styles.orderHint}>{t('setup.reorderHint')}</Text>
@@ -203,15 +206,18 @@ export default function PlayersSetupScreen() {
       }
     >
       <DraggableFlatList
-        data={setupPlayers}
+        data={listData}
         keyExtractor={(item) => item.id}
         renderItem={renderPlayer}
         onDragEnd={handleDragEnd}
+        extraData={expandedId}
         ListHeaderComponent={listHeader}
         ListFooterComponent={listFooter}
         contentContainerStyle={styles.listContent}
         containerStyle={styles.list}
-        activationDistance={8}
+        activationDistance={12}
+        autoscrollThreshold={80}
+        autoscrollSpeed={120}
       />
     </ScreenLayout>
   );
@@ -219,13 +225,16 @@ export default function PlayersSetupScreen() {
 
 const styles = StyleSheet.create({
   screenBody: {
-    padding: 0,
+    paddingHorizontal: 20,
+    paddingTop: 0,
+    paddingBottom: 0,
     flex: 1,
   },
   list: {
     flex: 1,
   },
   listContent: {
+    paddingHorizontal: 20,
     paddingBottom: 32,
   },
   addRow: {
@@ -250,7 +259,7 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   orderSection: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   orderTitle: {
     color: colors.text,
@@ -262,72 +271,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 14,
     lineHeight: 20,
-  },
-  playerRow: {
-    marginBottom: 8,
-  },
-  playerRowActive: {
-    opacity: 0.92,
-    transform: [{ scale: 1.02 }],
-  },
-  playerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-    paddingHorizontal: 4,
-  },
-  seatBadge: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  seatNumber: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  dragHandle: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  dragHandleIcon: {
-    color: colors.textMuted,
-    fontSize: 22,
-    fontWeight: '700',
-    lineHeight: 24,
-  },
-  playerActions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 12,
-    paddingLeft: 4,
-  },
-  smallBtn: {
-    backgroundColor: colors.surfaceElevated,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  smallBtnText: {
-    color: colors.textMuted,
-    fontSize: 12,
-  },
-  deleteBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  deleteText: {
-    color: colors.danger,
-    fontSize: 13,
   },
   rosterSection: {
     marginTop: 24,
@@ -360,5 +303,9 @@ const styles = StyleSheet.create({
   link: {
     color: colors.primary,
     fontWeight: '600',
+  },
+  deleteText: {
+    color: colors.danger,
+    fontSize: 13,
   },
 });

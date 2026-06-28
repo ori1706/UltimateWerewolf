@@ -1,9 +1,10 @@
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
+import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
+import { PhaseIntro } from '@/src/components/PhaseIntro';
 import { PlayerCard } from '@/src/components/PlayerCard';
 import { PlayerPicker } from '@/src/components/PlayerPicker';
 import {
@@ -15,26 +16,45 @@ import {
   getWerewolves,
 } from '@/src/game/engine';
 import { getPlayerById } from '@/src/game/rules';
+import { formatInspectionResultLabel, inspectPlayer } from '@/src/game/roleReveal';
+import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
 export default function NightScreen() {
   const { t } = useTranslation();
-  const game = useGameStore((s) => s.game);
+  const game = useGamePhaseScreen('night');
   const submitNightAction = useGameStore((s) => s.submitNightAction);
+  const [phaseIntroDismissed, setPhaseIntroDismissed] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [seerResult, setSeerResult] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!game) return;
-    if (game.phase === 'day') router.replace('/game/day');
-    else if (game.phase === 'hunter') router.replace('/game/hunter');
-    else if (game.phase === 'gameOver') router.replace('/results');
-  }, [game?.phase]);
+    setPhaseIntroDismissed(false);
+    setGateOpen(false);
+    setSelected([]);
+    setSeerResult(null);
+  }, [game?.dayNumber]);
 
-  if (!game || game.phase !== 'night') {
+  useEffect(() => {
+    setGateOpen(false);
+    setSelected([]);
+    setSeerResult(null);
+  }, [game?.currentNightStepIndex]);
+
+  if (!game) {
     return null;
+  }
+
+  if (!phaseIntroDismissed) {
+    return (
+      <PhaseIntro
+        variant="night"
+        dayNumber={game.dayNumber}
+        onContinue={() => setPhaseIntroDismissed(true)}
+      />
+    );
   }
 
   const step = getCurrentNightStep(game);
@@ -76,13 +96,10 @@ export default function NightScreen() {
 
     if (step.type === 'seerInspect') {
       const target = getPlayerById(game.players, selected[0]);
-      const isWolf = target?.role === 'werewolf';
-      setSeerResult(
-        t('night.seerResult', {
-          name: target?.name ?? '',
-          result: isWolf ? t('night.werewolfResult') : t('night.notWerewolfResult'),
-        })
-      );
+      if (!target?.role) return;
+
+      const inspection = inspectPlayer(target, 'seerInspect', game.settings);
+      setSeerResult(formatInspectionResultLabel(inspection, target.name, t));
       submitNightAction({ type: 'seerInspect', targetIds: selected });
       setTimeout(resetSelection, 2500);
       return;
@@ -105,7 +122,7 @@ export default function NightScreen() {
   if (step.type === 'masonReveal' && actor) {
     const partners = getMasonPartners(game, actor.id);
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <GameScreenLayout scroll>
         <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
         <Text style={styles.instruction}>{getInstruction()}</Text>
         {partners.map((p) => (
@@ -119,14 +136,14 @@ export default function NightScreen() {
           }}
           style={styles.btn}
         />
-      </ScrollView>
+      </GameScreenLayout>
     );
   }
 
   if (step.type === 'minionReveal' && actor) {
     const wolves = getWerewolves(game);
     return (
-      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      <GameScreenLayout scroll>
         <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
         <Text style={styles.instruction}>{getInstruction()}</Text>
         {wolves.map((p) => (
@@ -140,7 +157,7 @@ export default function NightScreen() {
           }}
           style={styles.btn}
         />
-      </ScrollView>
+      </GameScreenLayout>
     );
   }
 
@@ -178,7 +195,7 @@ export default function NightScreen() {
     !canBodyguardProtect(game, selected[0]);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <GameScreenLayout scroll>
       <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
       <Text style={styles.instruction}>{getInstruction()}</Text>
       <Text style={styles.private}>{t('passPhone.privateAction')}</Text>
@@ -217,19 +234,11 @@ export default function NightScreen() {
           style={styles.btn}
         />
       ) : null}
-    </ScrollView>
+    </GameScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
   phase: {
     color: colors.accent,
     fontSize: 14,

@@ -1,40 +1,35 @@
-import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { Button } from '@/src/components/Button';
+import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
 import { PlayerPicker } from '@/src/components/PlayerPicker';
 import { getCurrentVoter } from '@/src/game/engine';
+import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
 export default function VoteScreen() {
   const { t } = useTranslation();
-  const game = useGameStore((s) => s.game);
+  const game = useGamePhaseScreen('vote');
   const submitVote = useGameStore((s) => s.submitVote);
   const [gateOpen, setGateOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!game) return;
-    if (game.phase === 'night') router.replace('/game/night');
-    else if (game.phase === 'day') router.replace('/game/day');
-    else if (game.phase === 'hunter') router.replace('/game/hunter');
-    else if (game.phase === 'gameOver') router.replace('/results');
-  }, [game?.phase]);
+    setGateOpen(false);
+    setSelected([]);
+  }, [game?.voteStepIndex, game?.dayNumber]);
 
-  if (!game || game.phase !== 'vote') {
+  if (!game) {
     return null;
   }
 
   const voter = getCurrentVoter(game);
-  if (!voter) return null;
-
-  const reset = () => {
-    setSelected([]);
-    setGateOpen(false);
-  };
+  if (!voter) {
+    return null;
+  }
 
   if (!gateOpen) {
     return (
@@ -47,7 +42,7 @@ export default function VoteScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <GameScreenLayout scroll>
       <Text style={styles.phase}>
         {t('vote.title', { number: game.dayNumber })}
       </Text>
@@ -72,24 +67,15 @@ export default function VoteScreen() {
         onPress={() => {
           if (selected.length !== 1) return;
           submitVote(voter.id, selected[0]);
-          reset();
         }}
         disabled={selected.length !== 1}
         style={styles.btn}
       />
-    </ScrollView>
+    </GameScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
   phase: {
     color: colors.accent,
     fontSize: 14,

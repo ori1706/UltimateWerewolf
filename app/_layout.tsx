@@ -1,6 +1,7 @@
 import 'react-native-gesture-handler';
 import { Stack } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useFonts, Inter_400Regular, Inter_600SemiBold, Inter_700Bold, Inter_800ExtraBold } from '@expo-google-fonts/inter';
 import { Heebo_400Regular, Heebo_600SemiBold, Heebo_700Bold, Heebo_800ExtraBold } from '@expo-google-fonts/heebo';
 import * as SplashScreen from 'expo-splash-screen';
@@ -38,6 +39,7 @@ export default function RootLayout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
       <I18nextProvider i18n={i18n}>
         <Stack
         screenOptions={{
@@ -59,6 +61,7 @@ export default function RootLayout() {
         <Stack.Screen name="results" options={{ headerShown: false }} />
       </Stack>
     </I18nextProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }

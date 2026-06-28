@@ -1,28 +1,37 @@
-import { router } from 'expo-router';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
+import { GameScreenLayout } from '@/src/components/GameScreenLayout';
+import { PhaseIntro } from '@/src/components/PhaseIntro';
 import { PlayerCard } from '@/src/components/PlayerCard';
 import { getPlayerById } from '@/src/game/rules';
+import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
 export default function DayScreen() {
   const { t } = useTranslation();
-  const game = useGameStore((s) => s.game);
+  const game = useGamePhaseScreen('day');
   const beginVoting = useGameStore((s) => s.beginVoting);
+  const [phaseIntroDismissed, setPhaseIntroDismissed] = useState(false);
 
   useEffect(() => {
-    if (!game) return;
-    if (game.phase === 'night') router.replace('/game/night');
-    else if (game.phase === 'hunter') router.replace('/game/hunter');
-    else if (game.phase === 'vote') router.replace('/game/vote');
-    else if (game.phase === 'gameOver') router.replace('/results');
-  }, [game?.phase]);
+    setPhaseIntroDismissed(false);
+  }, [game?.dayNumber]);
 
-  if (!game || game.phase !== 'day') {
+  if (!game) {
     return null;
+  }
+
+  if (!phaseIntroDismissed) {
+    return (
+      <PhaseIntro
+        variant="day"
+        dayNumber={game.dayNumber}
+        onContinue={() => setPhaseIntroDismissed(true)}
+      />
+    );
   }
 
   const deadTonight = game.nightDeaths
@@ -30,7 +39,7 @@ export default function DayScreen() {
     .filter(Boolean);
 
   return (
-    <View style={styles.container}>
+    <GameScreenLayout scroll contentStyle={styles.content}>
       <Text style={styles.phase}>{t('day.title', { number: game.dayNumber })}</Text>
       <Text style={styles.discussion}>{t('day.discussion')}</Text>
 
@@ -60,22 +69,16 @@ export default function DayScreen() {
 
       <Button
         label={t('day.beginVote')}
-        onPress={() => {
-          beginVoting();
-          router.replace('/game/vote');
-        }}
+        onPress={() => beginVoting()}
         style={styles.btn}
       />
-    </View>
+    </GameScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    padding: 24,
-    justifyContent: 'center',
+  content: {
+    flexGrow: 1,
   },
   phase: {
     color: colors.accent,
@@ -118,6 +121,6 @@ const styles = StyleSheet.create({
     paddingLeft: 4,
   },
   btn: {
-    marginTop: 'auto',
+    marginTop: 24,
   },
 });

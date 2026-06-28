@@ -5,7 +5,9 @@ import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { RoleCounter } from '@/src/components/RoleCounter';
 import { RoleInfoModal } from '@/src/components/RoleInfoModal';
+import { RoleRevealSettingRow } from '@/src/components/RoleRevealSettingRow';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
+import { ROLE_REVEAL_SETTING_DEFS, setRoleRevealEnabled } from '@/src/game/roleReveal';
 import { CORE_ROLES } from '@/src/game/roles';
 import type { RoleId } from '@/src/game/types';
 import {
@@ -97,16 +99,32 @@ export default function RolesSetupScreen() {
         onClose={() => setInfoRole(null)}
       />
 
-      <View style={styles.settingRow}>
-        <View style={styles.settingInfo}>
-          <Text style={styles.settingLabel}>{t('settings.revealDeadRoles')}</Text>
-          <Text style={styles.settingHint}>{t('settings.revealDeadRolesHint')}</Text>
+      <View style={styles.settingsSection}>
+        <Text style={styles.settingsTitle}>{t('settings.title')}</Text>
+
+        <View style={styles.settingRow}>
+          <View style={styles.settingInfo}>
+            <Text style={styles.settingLabel}>{t('settings.revealDeadRoles')}</Text>
+            <Text style={styles.settingHint}>{t('settings.revealDeadRolesHint')}</Text>
+          </View>
+          <Switch
+            value={settings.revealDeadRoles}
+            onValueChange={(v) => setSettings({ revealDeadRoles: v })}
+            trackColor={{ true: colors.primary }}
+          />
         </View>
-        <Switch
-          value={settings.revealDeadRoles}
-          onValueChange={(v) => setSettings({ revealDeadRoles: v })}
-          trackColor={{ true: colors.primary }}
-        />
+
+        {ROLE_REVEAL_SETTING_DEFS.map((def) => (
+          <RoleRevealSettingRow
+            key={def.action}
+            def={def}
+            settings={settings}
+            onChange={(enabled) => {
+              const next = setRoleRevealEnabled(settings, def, enabled);
+              setSettings({ roleReveal: next.roleReveal });
+            }}
+          />
+        ))}
       </View>
     </ScreenLayout>
   );
@@ -161,10 +179,20 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderRadius: 16,
     padding: 16,
-    marginTop: 16,
+    marginTop: 12,
     borderWidth: 1,
     borderColor: colors.border,
     gap: 12,
+  },
+  settingsSection: {
+    marginTop: 16,
+  },
+  settingsTitle: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginBottom: 4,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   settingInfo: {
     flex: 1,

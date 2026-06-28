@@ -24,6 +24,7 @@ import {
   getDefaultRoleCounts,
   MIN_PLAYERS,
 } from '../game/rules';
+import { DEFAULT_GAME_SETTINGS, mergeGameSettings } from '../game/roleReveal';
 
 interface GameStore {
   setupPlayers: Player[];
@@ -59,7 +60,7 @@ export const useGameStore = create<GameStore>()(
     (set, get) => ({
       setupPlayers: [],
       roleCounts: createEmptyRoleCounts(),
-      settings: { revealDeadRoles: true },
+      settings: DEFAULT_GAME_SETTINGS,
       game: null,
       savedRosters: [],
 
@@ -94,7 +95,7 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      reorderPlayers: (players) => set({ setupPlayers: players }),
+      reorderPlayers: (players) => set({ setupPlayers: [...players] }),
 
       movePlayer: (id, direction) => {
         set((s) => {
@@ -119,7 +120,7 @@ export const useGameStore = create<GameStore>()(
       },
 
       setSettings: (partial) =>
-        set((s) => ({ settings: { ...s.settings, ...partial } })),
+        set((s) => ({ settings: mergeGameSettings(s.settings, partial) })),
 
       saveRoster: (name) => {
         const roster: SavedRoster = {
@@ -156,7 +157,8 @@ export const useGameStore = create<GameStore>()(
       startGame: () => {
         const { setupPlayers, roleCounts, settings } = get();
         if (setupPlayers.length < MIN_PLAYERS) return;
-        let state = createInitialGameState(setupPlayers, roleCounts, settings);
+        const normalizedSettings = mergeGameSettings(settings, {});
+        let state = createInitialGameState(setupPlayers, roleCounts, normalizedSettings);
         state = startRoleAssignment(state);
         set({ game: state });
       },

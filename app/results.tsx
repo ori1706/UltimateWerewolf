@@ -6,6 +6,7 @@ import { Button } from '@/src/components/Button';
 import { EventLogItem, PhaseHeader } from '@/src/components/EventLogItem';
 import { PlayerCard } from '@/src/components/PlayerCard';
 import type { GameEvent } from '@/src/game/types';
+import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
@@ -27,7 +28,7 @@ function groupEvents(events: GameEvent[]) {
 
 export default function ResultsScreen() {
   const { t } = useTranslation();
-  const game = useGameStore((s) => s.game);
+  const game = useGamePhaseScreen('gameOver');
   const resetAll = useGameStore((s) => s.resetAll);
 
   const groups = useMemo(
@@ -35,8 +36,7 @@ export default function ResultsScreen() {
     [game?.events]
   );
 
-  if (!game || game.phase !== 'gameOver') {
-    router.replace('/');
+  if (!game) {
     return null;
   }
 

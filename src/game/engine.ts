@@ -1,4 +1,5 @@
 import { createId } from '../utils/id';
+import { inspectPlayer, roleInspectionToEventMetadata } from './roleReveal';
 import { ROLES } from './roles';
 import {
   checkTannerWin,
@@ -364,14 +365,16 @@ export function submitNightAction(
     case 'seerInspect': {
       const targetId = payload.targetIds[0];
       const target = getPlayerById(next.players, targetId);
-      const isWerewolf = target?.role === 'werewolf';
+      if (!target?.role) break;
+
+      const inspection = inspectPlayer(target, 'seerInspect', next.settings);
       const actorId = step.actorId!;
       const existing = next.seerResults[actorId] ?? [];
       next = {
         ...next,
         seerResults: {
           ...next.seerResults,
-          [actorId]: [...existing, { targetId, isWerewolf }],
+          [actorId]: [...existing, inspection],
         },
       };
       events.push(
@@ -381,7 +384,7 @@ export function submitNightAction(
           type: 'seerInspected',
           actorIds: [actorId],
           targetIds: [targetId],
-          metadata: { isWerewolf },
+          metadata: roleInspectionToEventMetadata(inspection),
           hidden: true,
         })
       );

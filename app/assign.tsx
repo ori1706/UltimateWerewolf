@@ -1,5 +1,4 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View, ScrollView } from 'react-native';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
@@ -7,17 +6,21 @@ import { Button } from '@/src/components/Button';
 import { PlayerCard } from '@/src/components/PlayerCard';
 import { getFellowWerewolves } from '@/src/game/engine';
 import { getRoleTeam } from '@/src/game/roles';
+import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
 export default function AssignScreen() {
   const { t } = useTranslation();
-  const game = useGameStore((s) => s.game);
+  const game = useGamePhaseScreen('roleAssign');
   const advanceRoleAssign = useGameStore((s) => s.advanceRoleAssign);
   const [gateOpen, setGateOpen] = useState(false);
 
-  if (!game || game.phase !== 'roleAssign') {
-    router.replace('/');
+  useEffect(() => {
+    setGateOpen(false);
+  }, [game?.roleAssignIndex]);
+
+  if (!game) {
     return null;
   }
 
@@ -59,13 +62,15 @@ export default function AssignScreen() {
 
       {role === 'werewolf' ? (
         <View style={styles.wolfSection}>
-          <Text style={styles.wolfTitle}>{t('assign.fellowWerewolves')}</Text>
           {fellowWolves.length === 0 ? (
-            <Text style={styles.onlyWolf}>{t('assign.onlyWerewolf')}</Text>
+            <Text style={styles.wolfTitle}>{t('assign.onlyWerewolf')}</Text>
           ) : (
-            fellowWolves.map((wolf) => (
-              <PlayerCard key={wolf.id} player={wolf} />
-            ))
+            <>
+              <Text style={styles.wolfTitle}>{t('assign.fellowWerewolves')}</Text>
+              {fellowWolves.map((wolf) => (
+                <PlayerCard key={wolf.id} player={wolf} />
+              ))}
+            </>
           )}
         </View>
       ) : null}
@@ -73,12 +78,7 @@ export default function AssignScreen() {
       <Button
         label={t('passPhone.gotIt')}
         onPress={() => {
-          setGateOpen(false);
-          const isLast = game.roleAssignIndex + 1 >= game.players.length;
           advanceRoleAssign();
-          if (isLast) {
-            router.replace('/game/night');
-          }
         }}
         style={styles.btn}
       />
@@ -149,12 +149,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 12,
     textAlign: 'center',
-  },
-  onlyWolf: {
-    color: colors.textMuted,
-    fontSize: 15,
-    textAlign: 'center',
-    marginBottom: 8,
   },
   btn: {
     width: '100%',

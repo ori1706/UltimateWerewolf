@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
+import { formatInspectionResultFromEvent } from '../game/roleReveal';
 import type { GameEvent, Player } from '../game/types';
 import { colors } from '../theme/colors';
 
@@ -73,10 +74,7 @@ export function EventLogItem({ event, players, showHidden = true }: EventLogItem
       break;
     case 'seerInspected':
       text = t('events.seerInspected', {
-        name: playerName(players, event.targetIds?.[0] ?? ''),
-        result: event.metadata?.isWerewolf
-          ? t('night.werewolfResult')
-          : t('night.notWerewolfResult'),
+        result: formatInspectionResultFromEvent(event, players, t),
       });
       break;
     case 'playerDied':
