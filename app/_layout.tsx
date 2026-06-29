@@ -37,6 +37,7 @@ function AppStack() {
       <Stack.Screen name="settings" options={{ title: '' }} />
       <Stack.Screen name="setup/players" options={{ title: '' }} />
       <Stack.Screen name="setup/roles" options={{ title: '' }} />
+      <Stack.Screen name="setup/game-settings" options={{ title: '' }} />
       <Stack.Screen name="assign" options={{ headerShown: false }} />
       <Stack.Screen name="game/night" options={{ headerShown: false }} />
       <Stack.Screen name="game/day" options={{ headerShown: false }} />

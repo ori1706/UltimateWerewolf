@@ -53,12 +53,26 @@ export function findHeartbreakDeathsAfterVote(
   );
 }
 
-/** Hide legacy per-vote lines and lynch duplicates when a grouped vote event exists. */
+/** Hide redundant or legacy log lines when a richer grouped event exists. */
 export function filterEventLogEvents(events: GameEvent[]): GameEvent[] {
   const resolvedDays = new Set(
     events
       .filter((event) => event.type === 'dayVoteResolved')
       .map((event) => event.dayNumber)
+  );
+
+  const werewolfKillTargetIds = new Set(
+    events
+      .filter((event) => event.type === 'werewolfKillSucceeded')
+      .map((event) => event.targetIds?.[0])
+      .filter((id): id is string => !!id)
+  );
+
+  const hunterShotTargetIds = new Set(
+    events
+      .filter((event) => event.type === 'hunterShot')
+      .map((event) => event.targetIds?.[0])
+      .filter((id): id is string => !!id)
   );
 
   return events.filter((event) => {
@@ -72,6 +86,17 @@ export function filterEventLogEvents(events: GameEvent[]): GameEvent[] {
       resolvedDays.has(event.dayNumber)
     ) {
       return false;
+    }
+
+    if (event.type === 'playerDied') {
+      const targetId = event.targetIds?.[0];
+      const cause = event.metadata?.cause;
+      if (targetId && cause === 'night' && werewolfKillTargetIds.has(targetId)) {
+        return false;
+      }
+      if (targetId && cause === 'hunter' && hunterShotTargetIds.has(targetId)) {
+        return false;
+      }
     }
 
     return true;

@@ -48,7 +48,7 @@ export const he: TranslationKeys = {
     setupSteps: [
       'הוסיפו לפחות 5 שחקנים עם שמות ותמונות (אופציונלי).',
       'קבעו סדר ישיבה — פעולות הלילה עוקבות אחריו.',
-      'בחרו תפקידים והתאימו כללי משחק בהגדרות.',
+      'בחרו תפקידים, ואז פתחו הגדרות כדי לכוונן את כללי המשחק.',
       'העבירו את הטלפון כדי שכל שחקן יראה את תפקידו בפרטיות.',
     ],
     phasesTitle: 'שלבי המשחק',
@@ -115,6 +115,7 @@ export const he: TranslationKeys = {
     total: 'סה"כ',
     resetDefaults: 'איפוס לברירת מחדל',
     startGame: 'התחל משחק',
+    settings: 'הגדרות',
     tapForInfo: 'הקש על שם תפקיד כדי לראות מה הוא עושה',
     werewolf: 'זאב',
     villager: 'אזרח',
@@ -142,6 +143,7 @@ export const he: TranslationKeys = {
   },
   settings: {
     title: 'כללי משחק',
+    subtitle: 'כללים ווריאנטים אופציונליים למשחק שלך',
     revealDeadRoles: 'חשוף תפקידים של מתים',
     revealDeadRolesHint: 'כשמישהו מת, הצג את תפקידו לכולם',
     seerFullRole: 'הרואה רואה תפקיד מדויק',

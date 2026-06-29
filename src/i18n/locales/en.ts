@@ -46,7 +46,7 @@ export const en = {
     setupSteps: [
       'Add at least 5 players with names and optional photos.',
       'Set seating order — night actions follow this order.',
-      'Choose roles and adjust game rules in settings.',
+      'Choose roles, then open Settings to adjust game rules.',
       'Pass the phone so each player can privately view their role.',
     ],
     phasesTitle: 'Game phases',
@@ -114,6 +114,7 @@ export const en = {
     total: 'Total',
     resetDefaults: 'Reset Defaults',
     startGame: 'Start Game',
+    settings: 'Settings',
     tapForInfo: 'Tap a role name to see what it does',
     werewolf: 'Werewolf',
     villager: 'Villager',
@@ -141,6 +142,7 @@ export const en = {
   },
   settings: {
     title: 'Game rules',
+    subtitle: 'Optional rules and variants for your game',
     revealDeadRoles: 'Reveal dead players\' roles',
     revealDeadRolesHint: 'When someone dies, show their role to everyone',
     seerFullRole: 'Seer sees exact role',
