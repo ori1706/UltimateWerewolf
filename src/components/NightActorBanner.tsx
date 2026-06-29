@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import type { Player, RoleId } from '../game/types';
 import { PlayerAvatar } from './PlayerAvatar';
+import { RoleIcon } from './RoleIcon';
 import { colors } from '../theme/colors';
 
 interface NightActorBannerProps {
@@ -26,9 +27,12 @@ export function NightActorBanner({ player, displayRole }: NightActorBannerProps)
           {player.name}
         </Text>
         <Text style={styles.roleLabel}>{t('night.yourRole')}</Text>
-        <Text style={styles.role} numberOfLines={1}>
-          {t(`roles.${role}`)}
-        </Text>
+        <View style={styles.roleRow}>
+          <RoleIcon roleId={role} size={20} />
+          <Text style={styles.role} numberOfLines={1}>
+            {t(`roles.${role}`)}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -61,6 +65,11 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
+  },
+  roleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   role: {
     color: colors.primary,

@@ -6,6 +6,7 @@ export interface RoleDefinition {
   hasNightAction: boolean;
   night1Only?: boolean;
   i18nKey: string;
+  icon: string;
 }
 
 export const ROLES: Record<RoleId, RoleDefinition> = {
@@ -14,36 +15,42 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     team: 'werewolf',
     hasNightAction: true,
     i18nKey: 'roles.werewolf',
+    icon: '🐺',
   },
   villager: {
     id: 'villager',
     team: 'village',
     hasNightAction: false,
     i18nKey: 'roles.villager',
+    icon: '👤',
   },
   seer: {
     id: 'seer',
     team: 'village',
     hasNightAction: true,
     i18nKey: 'roles.seer',
+    icon: '🔮',
   },
   apprenticeSeer: {
     id: 'apprenticeSeer',
     team: 'village',
     hasNightAction: false,
     i18nKey: 'roles.apprenticeSeer',
+    icon: '✨',
   },
   bodyguard: {
     id: 'bodyguard',
     team: 'village',
     hasNightAction: true,
     i18nKey: 'roles.bodyguard',
+    icon: '🛡️',
   },
   hunter: {
     id: 'hunter',
     team: 'village',
     hasNightAction: false,
     i18nKey: 'roles.hunter',
+    icon: '🏹',
   },
   minion: {
     id: 'minion',
@@ -51,12 +58,14 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     hasNightAction: true,
     night1Only: true,
     i18nKey: 'roles.minion',
+    icon: '😈',
   },
   tanner: {
     id: 'tanner',
     team: 'neutral',
     hasNightAction: false,
     i18nKey: 'roles.tanner',
+    icon: '🧥',
   },
   mason: {
     id: 'mason',
@@ -64,6 +73,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     hasNightAction: true,
     night1Only: true,
     i18nKey: 'roles.mason',
+    icon: '🧱',
   },
   cupid: {
     id: 'cupid',
@@ -71,6 +81,7 @@ export const ROLES: Record<RoleId, RoleDefinition> = {
     hasNightAction: true,
     night1Only: true,
     i18nKey: 'roles.cupid',
+    icon: '💘',
   },
 };
 
@@ -91,6 +102,10 @@ export const CORE_ROLES: RoleId[] = [
 
 export function getRoleTeam(roleId: RoleId): Team {
   return ROLES[roleId].team;
+}
+
+export function getRoleIcon(roleId: RoleId): string {
+  return ROLES[roleId].icon;
 }
 
 export function isWerewolfTeam(roleId: RoleId): boolean {

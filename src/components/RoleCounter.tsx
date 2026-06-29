@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { RoleIcon } from './RoleIcon';
 import type { RoleId } from '../game/types';
 import { colors } from '../theme/colors';
 
@@ -13,6 +14,7 @@ interface RoleCounterProps {
 }
 
 export function RoleCounter({
+  roleId,
   label,
   count,
   onChange,
@@ -27,6 +29,7 @@ export function RoleCounter({
         style={styles.labelPress}
         disabled={!onInfoPress}
       >
+        <RoleIcon roleId={roleId} size={22} />
         <Text style={styles.label}>{label}</Text>
         {onInfoPress ? <Text style={styles.infoHint}>ⓘ</Text> : null}
       </Pressable>

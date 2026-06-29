@@ -23,6 +23,7 @@ export interface RoleRevealSettingDef {
   hintKey: string;
   defaultMode: RoleRevealMode;
   enabledMode: RoleRevealMode;
+  roleId?: RoleId;
 }
 
 export const DEFAULT_ROLE_REVEAL: RoleRevealSettings = {
@@ -50,6 +51,7 @@ export const ROLE_REVEAL_SETTING_DEFS: RoleRevealSettingDef[] = [
     hintKey: 'settings.seerFullRoleHint',
     defaultMode: 'teamBinary',
     enabledMode: 'fullRole',
+    roleId: 'seer',
   },
 ];
 
@@ -95,6 +97,12 @@ export function formatInspectionResultLabel(
   t: TFunction
 ): string {
   if (result.mode === 'fullRole' && result.revealedRole) {
+    if (result.revealedRole === 'werewolf') {
+      return t('night.roleInspectionTeam', {
+        name: targetName,
+        result: t('night.werewolfResult'),
+      });
+    }
     return t('night.roleInspectionRole', {
       name: targetName,
       role: t(`roles.${result.revealedRole}`),
@@ -118,6 +126,12 @@ export function formatInspectionResultFromEvent(
   const mode = (metadata?.revealMode as RoleRevealMode | undefined) ?? 'teamBinary';
 
   if (mode === 'fullRole' && metadata?.revealedRole) {
+    if (metadata.revealedRole === 'werewolf') {
+      return t('night.roleInspectionTeam', {
+        name: targetName,
+        result: t('night.werewolfResult'),
+      });
+    }
     return t('night.roleInspectionRole', {
       name: targetName,
       role: t(`roles.${metadata.revealedRole}`),

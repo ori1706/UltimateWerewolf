@@ -1,6 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
+import { RoleIcon } from '@/src/components/RoleIcon';
 import { CORE_ROLES, ROLES } from '@/src/game/roles';
 import type { RoleId } from '@/src/game/types';
 import { colors } from '@/src/theme/colors';
@@ -40,7 +41,10 @@ function RoleCard({ roleId }: { roleId: RoleId }) {
   return (
     <View style={styles.roleCard}>
       <View style={styles.roleHeader}>
-        <Text style={styles.roleName}>{t(`roles.${roleId}`)}</Text>
+        <View style={styles.roleNameRow}>
+          <RoleIcon roleId={roleId} size={22} />
+          <Text style={styles.roleName}>{t(`roles.${roleId}`)}</Text>
+        </View>
         <View style={[styles.teamBadge, { borderColor: teamColor }]}>
           <Text style={[styles.teamText, { color: teamColor }]}>
             {t(`assign.teams.${team}`)}
@@ -154,6 +158,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 10,
     marginBottom: 8,
+  },
+  roleNameRow: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   roleName: {
     color: colors.text,

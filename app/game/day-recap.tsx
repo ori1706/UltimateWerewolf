@@ -4,7 +4,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PlayerCard } from '@/src/components/PlayerCard';
+import { RoleIcon } from '@/src/components/RoleIcon';
 import { getPlayerById } from '@/src/game/rules';
+import type { RoleId } from '@/src/game/types';
 import {
   findHeartbreakDeathsAfterVote,
   findLastDayVoteResolved,
@@ -68,9 +70,11 @@ export default function DayRecapScreen() {
         <View style={styles.executedCard}>
           <PlayerCard player={executed} />
           {game.settings.revealDeadRoles && executedRole ? (
-            <Text style={styles.roleReveal}>
-              {t('dayRecap.roleReveal', { role: t(`roles.${executedRole}`) })}
-            </Text>
+            <View style={styles.roleRevealRow}>
+              <Text style={styles.roleReveal}>{t('dayRecap.roleRevealPrefix')}</Text>
+              <RoleIcon roleId={executedRole as RoleId} size={18} />
+              <Text style={styles.roleReveal}>{t(`roles.${executedRole}`)}</Text>
+            </View>
           ) : null}
         </View>
       ) : null}
@@ -90,9 +94,11 @@ export default function DayRecapScreen() {
                   {t('dayRecap.loverDied', { name: partner.name })}
                 </Text>
                 {game.settings.revealDeadRoles && partner.role ? (
-                  <Text style={styles.roleReveal}>
-                    {t('dayRecap.roleReveal', { role: t(`roles.${partner.role}`) })}
-                  </Text>
+                  <View style={styles.roleRevealRow}>
+                    <Text style={styles.roleReveal}>{t('dayRecap.roleRevealPrefix')}</Text>
+                    <RoleIcon roleId={partner.role} size={18} />
+                    <Text style={styles.roleReveal}>{t(`roles.${partner.role}`)}</Text>
+                  </View>
                 ) : null}
               </View>
             );
@@ -164,6 +170,14 @@ const styles = StyleSheet.create({
   roleReveal: {
     color: colors.textMuted,
     fontSize: 15,
+    marginTop: -4,
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
+  roleRevealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: -4,
     marginBottom: 8,
     paddingLeft: 4,

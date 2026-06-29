@@ -6,6 +6,7 @@ import { DeliberationTimer } from '@/src/components/DeliberationTimer';
 import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PhaseIntro } from '@/src/components/PhaseIntro';
 import { PlayerCard } from '@/src/components/PlayerCard';
+import { RoleIcon } from '@/src/components/RoleIcon';
 import { getPlayerById } from '@/src/game/rules';
 import { DEFAULT_DELIBERATION_TIMER_SECONDS } from '@/src/game/roleReveal';
 import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
@@ -93,9 +94,13 @@ export default function DayScreen() {
             ? deadTonight.map((p) => (
                 <View key={p!.id} style={styles.deathCard}>
                   <PlayerCard player={p!} />
-                  <Text style={styles.roleReveal}>
-                    {t('day.roleReveal', { role: t(`roles.${p!.role}`) })}
-                  </Text>
+                  {p!.role ? (
+                    <View style={styles.roleRevealRow}>
+                      <Text style={styles.roleReveal}>{t('day.roleRevealPrefix')}</Text>
+                      <RoleIcon roleId={p!.role} size={18} />
+                      <Text style={styles.roleReveal}>{t(`roles.${p!.role}`)}</Text>
+                    </View>
+                  ) : null}
                 </View>
               ))
             : deadTonight.map((p) => <PlayerCard key={p!.id} player={p!} />)}
@@ -145,6 +150,14 @@ const styles = StyleSheet.create({
   roleReveal: {
     color: colors.textMuted,
     fontSize: 15,
+    marginTop: -4,
+    marginBottom: 8,
+    paddingLeft: 4,
+  },
+  roleRevealRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     marginTop: -4,
     marginBottom: 8,
     paddingLeft: 4,

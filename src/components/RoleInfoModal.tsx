@@ -4,6 +4,7 @@ import { ROLES } from '../game/roles';
 import type { RoleId } from '../game/types';
 import { colors } from '../theme/colors';
 import { Button } from './Button';
+import { RoleIcon } from './RoleIcon';
 
 interface RoleInfoModalProps {
   roleId: RoleId | null;
@@ -22,7 +23,10 @@ export function RoleInfoModal({ roleId, visible, onClose }: RoleInfoModalProps) 
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>{t(`roles.${roleId}`)}</Text>
+          <View style={styles.titleRow}>
+            <RoleIcon roleId={roleId} size={40} />
+            <Text style={styles.title}>{t(`roles.${roleId}`)}</Text>
+          </View>
           <View style={styles.teamBadge}>
             <Text style={styles.teamLabel}>{t('assign.team')}</Text>
             <Text style={[styles.team, team === 'werewolf' && styles.teamWolf]}>
@@ -51,11 +55,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    marginBottom: 16,
+  },
   title: {
     color: colors.text,
     fontSize: 28,
     fontWeight: '800',
-    marginBottom: 16,
+    flex: 1,
   },
   teamBadge: {
     alignSelf: 'flex-start',

@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
 import { PlayerCard } from '@/src/components/PlayerCard';
+import { RoleIcon } from '@/src/components/RoleIcon';
 import { getFellowWerewolves } from '@/src/game/engine';
 import { getRoleTeam } from '@/src/game/roles';
 import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
@@ -42,6 +43,7 @@ export default function AssignScreen() {
           })}
         </Text>
         <Text style={styles.label}>{t('assign.yourRole')}</Text>
+        <RoleIcon roleId={role} size={56} style={styles.roleIcon} />
         <Text style={styles.role}>{t(`roles.${role}`)}</Text>
         <Text style={styles.desc}>{t(`roles.descriptions.${role}`)}</Text>
         <View style={styles.teamBadge}>
@@ -85,6 +87,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginBottom: 8,
     textAlign: 'center',
+  },
+  roleIcon: {
+    marginBottom: 8,
   },
   role: {
     color: colors.text,

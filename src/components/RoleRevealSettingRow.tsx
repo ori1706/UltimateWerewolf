@@ -6,6 +6,7 @@ import {
 } from '@/src/game/roleReveal';
 import type { GameSettings } from '@/src/game/types';
 import { colors } from '@/src/theme/colors';
+import { RoleIcon } from './RoleIcon';
 
 interface RoleRevealSettingRowProps {
   def: RoleRevealSettingDef;
@@ -19,7 +20,10 @@ export function RoleRevealSettingRow({ def, settings, onChange }: RoleRevealSett
   return (
     <View style={styles.row}>
       <View style={styles.info}>
-        <Text style={styles.label}>{t(def.labelKey)}</Text>
+        <View style={styles.labelRow}>
+          {def.roleId ? <RoleIcon roleId={def.roleId} size={20} /> : null}
+          <Text style={styles.label}>{t(def.labelKey)}</Text>
+        </View>
         <Text style={styles.hint}>{t(def.hintKey)}</Text>
       </View>
       <Switch
@@ -46,6 +50,11 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   label: {
     color: colors.text,

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { EventLogItem, PhaseHeader } from '@/src/components/EventLogItem';
 import { PlayerCard } from '@/src/components/PlayerCard';
+import { getRoleIcon } from '@/src/game/roles';
 import { filterEventLogEvents } from '@/src/game/voteLog';
 import type { GameEvent } from '@/src/game/types';
 import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
@@ -57,7 +58,9 @@ export default function ResultsScreen() {
           <PlayerCard
             key={p.id}
             player={p}
-            subtitle={t(`roles.${p.role}`)}
+            subtitle={
+              p.role ? `${getRoleIcon(p.role)} ${t(`roles.${p.role}`)}` : undefined
+            }
             showAlive
           />
         ))}
