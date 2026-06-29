@@ -11,6 +11,14 @@ const resources = {
   he: { translation: he },
 };
 
+const initPromise = i18n.use(initReactI18next).init({
+  resources,
+  lng: 'en',
+  fallbackLng: 'en',
+  interpolation: { escapeValue: false },
+  compatibilityJSON: 'v4',
+});
+
 export function applyRtl(locale: AppLocale): void {
   const isRtl = locale === 'he';
   if (I18nManager.isRTL !== isRtl) {
@@ -19,22 +27,20 @@ export function applyRtl(locale: AppLocale): void {
   }
 }
 
-export function initI18n(locale: AppLocale = 'en'): typeof i18n {
-  applyRtl(locale);
-
-  if (!i18n.isInitialized) {
-    i18n.use(initReactI18next).init({
-      resources,
-      lng: locale,
-      fallbackLng: 'en',
-      interpolation: { escapeValue: false },
-      compatibilityJSON: 'v4',
-    });
-  } else {
-    i18n.changeLanguage(locale);
+/** Merge latest locale files (helps dev hot reload pick up new keys). */
+export function refreshTranslationResources(): void {
+  for (const [lng, bundle] of Object.entries(resources) as [AppLocale, { translation: typeof en }][]) {
+    i18n.addResourceBundle(lng, 'translation', bundle.translation, true, true);
   }
+}
 
-  return i18n;
+export async function setAppLocale(locale: AppLocale): Promise<void> {
+  await initPromise;
+  applyRtl(locale);
+  refreshTranslationResources();
+  if (i18n.language !== locale) {
+    await i18n.changeLanguage(locale);
+  }
 }
 
 export { i18n };

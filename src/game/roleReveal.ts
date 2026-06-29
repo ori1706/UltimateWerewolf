@@ -29,9 +29,17 @@ export const DEFAULT_ROLE_REVEAL: RoleRevealSettings = {
   seerInspect: 'teamBinary',
 };
 
+export const DEFAULT_DELIBERATION_TIMER_SECONDS = 120;
+export const DELIBERATION_TIMER_ADD_SECONDS = 15;
+export const MIN_DELIBERATION_TIMER_MINUTES = 1;
+export const MAX_DELIBERATION_TIMER_MINUTES = 15;
+
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   revealDeadRoles: true,
   roleReveal: DEFAULT_ROLE_REVEAL,
+  deliberationTimerEnabled: false,
+  deliberationTimerSeconds: DEFAULT_DELIBERATION_TIMER_SECONDS,
+  allowVoteSkip: false,
 };
 
 /** Configurable role-reveal toggles shown in setup. Add entries here for future roles. */

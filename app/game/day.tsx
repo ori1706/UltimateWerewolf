@@ -1,12 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
+import { DeliberationTimer } from '@/src/components/DeliberationTimer';
 import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PhaseIntro } from '@/src/components/PhaseIntro';
 import { PlayerCard } from '@/src/components/PlayerCard';
 import { getPlayerById } from '@/src/game/rules';
+import { DEFAULT_DELIBERATION_TIMER_SECONDS } from '@/src/game/roleReveal';
 import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
+import { useDeliberationTimer } from '@/src/hooks/useDeliberationTimer';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
 
@@ -19,6 +22,29 @@ export default function DayScreen() {
   useEffect(() => {
     setPhaseIntroDismissed(false);
   }, [game?.dayNumber]);
+
+  const timerEnabled = game?.settings.deliberationTimerEnabled ?? false;
+  const timerSeconds =
+    game?.settings.deliberationTimerSeconds ?? DEFAULT_DELIBERATION_TIMER_SECONDS;
+  const { secondsLeft, skip, addTime } = useDeliberationTimer(
+    !!game && timerEnabled && phaseIntroDismissed,
+    timerSeconds,
+    game?.dayNumber ?? 0
+  );
+  const autoVoteTriggeredRef = useRef(false);
+
+  useEffect(() => {
+    autoVoteTriggeredRef.current = false;
+  }, [game?.dayNumber]);
+
+  useEffect(() => {
+    if (!game || !timerEnabled || !phaseIntroDismissed) return;
+    if (secondsLeft > 0) return;
+    if (autoVoteTriggeredRef.current) return;
+
+    autoVoteTriggeredRef.current = true;
+    beginVoting();
+  }, [game, timerEnabled, phaseIntroDismissed, secondsLeft, beginVoting]);
 
   if (!game) {
     return null;
@@ -39,8 +65,17 @@ export default function DayScreen() {
     .filter(Boolean);
 
   return (
-    <GameScreenLayout scroll contentStyle={styles.content}>
+    <GameScreenLayout
+      scroll
+      contentStyle={styles.content}
+      footer={<Button label={t('day.beginVote')} onPress={() => beginVoting()} />}
+    >
       <Text style={styles.phase}>{t('day.title', { number: game.dayNumber })}</Text>
+
+      {timerEnabled ? (
+        <DeliberationTimer secondsLeft={secondsLeft} onSkip={skip} onAddTime={addTime} />
+      ) : null}
+
       <Text style={styles.discussion}>{t('day.discussion')}</Text>
 
       <Text style={styles.sectionTitle}>{t('day.deathsTitle')}</Text>
@@ -66,12 +101,6 @@ export default function DayScreen() {
             : deadTonight.map((p) => <PlayerCard key={p!.id} player={p!} />)}
         </>
       )}
-
-      <Button
-        label={t('day.beginVote')}
-        onPress={() => beginVoting()}
-        style={styles.btn}
-      />
     </GameScreenLayout>
   );
 }
@@ -119,8 +148,5 @@ const styles = StyleSheet.create({
     marginTop: -4,
     marginBottom: 8,
     paddingLeft: 4,
-  },
-  btn: {
-    marginTop: 24,
   },
 });

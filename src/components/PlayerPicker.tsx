@@ -3,6 +3,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../theme/colors';
 import type { Player } from '../game/types';
 import { PlayerCard } from './PlayerCard';
+import { PlayerGrid, shouldUsePlayerGrid } from './PlayerGrid';
+import { PlayerGridTile } from './PlayerGridTile';
 
 interface PlayerPickerProps {
   players: Player[];
@@ -28,10 +30,51 @@ export function PlayerPicker({
   const { t } = useTranslation();
 
   const eligible = players.filter(
-    (p) =>
-      (!showAlive || p.alive) &&
-      !excludeIds.includes(p.id)
+    (p) => (!showAlive || p.alive) && !excludeIds.includes(p.id)
   );
+
+  const useGrid = shouldUsePlayerGrid(eligible.length);
+
+  const handlePress = (playerId: string, selected: boolean, disabled: boolean) => {
+    if (disabled) return;
+    if (maxSelections === 1) {
+      onToggle(playerId);
+      return;
+    }
+    if (selected) {
+      onToggle(playerId);
+    } else if (selectedIds.length < maxSelections) {
+      onToggle(playerId);
+    }
+  };
+
+  if (useGrid) {
+    return (
+      <View style={styles.wrap}>
+        <PlayerGrid>
+          {eligible.map((player) => {
+            const selected = selectedIds.includes(player.id);
+            const atMax = maxSelections > 0 && selectedIds.length >= maxSelections;
+            const disabled = maxSelections !== 1 && !selected && atMax;
+            const voteCount = voteCounts[player.id] ?? 0;
+
+            return (
+              <PlayerGridTile
+                key={player.id}
+                player={player}
+                selected={selected}
+                disabled={disabled}
+                showAlive={showAlive}
+                voteCount={voteCount}
+                voteIcon={voteIcon}
+                onPress={() => handlePress(player.id, selected, disabled)}
+              />
+            );
+          })}
+        </PlayerGrid>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.wrap}>
@@ -39,7 +82,6 @@ export function PlayerPicker({
         const selected = selectedIds.includes(player.id);
         const atMax = maxSelections > 0 && selectedIds.length >= maxSelections;
         const disabled = maxSelections !== 1 && !selected && atMax;
-
         const voteCount = voteCounts[player.id] ?? 0;
 
         return (
@@ -58,18 +100,7 @@ export function PlayerPicker({
                 </View>
               ) : null
             }
-            onPress={() => {
-              if (disabled) return;
-              if (maxSelections === 1) {
-                onToggle(player.id);
-                return;
-              }
-              if (selected) {
-                onToggle(player.id);
-              } else if (selectedIds.length < maxSelections) {
-                onToggle(player.id);
-              }
-            }}
+            onPress={() => handlePress(player.id, selected, disabled)}
           />
         );
       })}

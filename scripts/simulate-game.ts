@@ -3,6 +3,7 @@
  * Run: npx tsx scripts/simulate-game.ts
  */
 import {
+  advanceDayRecap,
   advanceRoleAssign,
   createInitialGameState,
   finishHunterPhase,
@@ -30,7 +31,7 @@ function runNight(state: ReturnType<typeof createInitialGameState>) {
     if (!step) break;
     const living = s.players.filter((p) => p.alive && p.role !== 'werewolf');
     const target = living[0]?.id ?? s.players.find((p) => p.alive && p.id !== step.actorId)?.id;
-    if (!target && step.type !== 'masonReveal' && step.type !== 'minionReveal') {
+    if (!target && step.type !== 'masonReveal' && step.type !== 'minionReveal' && step.type !== 'loverReveal' && step.type !== 'pass') {
       throw new Error(`No target for step ${step.type}`);
     }
     if (step.type === 'cupid') {
@@ -39,6 +40,11 @@ function runNight(state: ReturnType<typeof createInitialGameState>) {
       s = submitNightAction(s, { type: 'masonReveal', targetIds: [] });
     } else if (step.type === 'minionReveal') {
       s = submitNightAction(s, { type: 'minionReveal', targetIds: [] });
+    } else if (step.type === 'loverReveal') {
+      const partnerId = s.players.find((p) => p.id === step.actorId)?.loverPartnerId;
+      s = submitNightAction(s, { type: 'loverReveal', targetIds: partnerId ? [partnerId] : [] });
+    } else if (step.type === 'pass') {
+      s = submitNightAction(s, { type: 'pass', targetIds: [] });
     } else if (step.type === 'werewolfKill') {
       s = submitNightAction(s, { type: 'werewolfKill', targetIds: [target!] });
     } else {
@@ -86,6 +92,10 @@ while (state.phase !== 'gameOver' && rounds < 30) {
     const target = state.players.find((p) => p.alive && p.id !== voterId)?.id;
     if (!voterId || !target) break;
     state = submitVote(state, voterId, target);
+    continue;
+  }
+  if (state.phase === 'dayRecap') {
+    state = advanceDayRecap(state);
     state = runHunterChain(state);
     continue;
   }

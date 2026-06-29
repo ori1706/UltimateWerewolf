@@ -1,17 +1,15 @@
 import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { formatInspectionResultFromEvent } from '../game/roleReveal';
+import { playerName } from '../game/voteLog';
 import type { GameEvent, Player } from '../game/types';
 import { colors } from '../theme/colors';
+import { DayVoteResultLogItem } from './DayVoteResultLogItem';
 
 interface EventLogItemProps {
   event: GameEvent;
   players: Player[];
   showHidden?: boolean;
-}
-
-function playerName(players: Player[], id: string): string {
-  return players.find((p) => p.id === id)?.name ?? id;
 }
 
 function namesList(players: Player[], ids: string[] = []): string {
@@ -22,6 +20,10 @@ export function EventLogItem({ event, players, showHidden = true }: EventLogItem
   const { t } = useTranslation();
 
   if (event.hidden && !showHidden) return null;
+
+  if (event.type === 'dayVoteResolved') {
+    return <DayVoteResultLogItem event={event} players={players} />;
+  }
 
   let text = '';
 
@@ -111,6 +113,11 @@ export function EventLogItem({ event, players, showHidden = true }: EventLogItem
       break;
     case 'voteTie':
       text = t('events.voteTie');
+      break;
+    case 'voteSkipped':
+      text = t('events.voteSkipped', {
+        name: playerName(players, event.actorIds?.[0] ?? ''),
+      });
       break;
     case 'gameEnded':
       text = t('events.gameEnded', {

@@ -5,6 +5,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { EventLogItem, PhaseHeader } from '@/src/components/EventLogItem';
 import { PlayerCard } from '@/src/components/PlayerCard';
+import { filterEventLogEvents } from '@/src/game/voteLog';
 import type { GameEvent } from '@/src/game/types';
 import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
@@ -31,10 +32,10 @@ export default function ResultsScreen() {
   const game = useGamePhaseScreen('gameOver');
   const resetAll = useGameStore((s) => s.resetAll);
 
-  const groups = useMemo(
-    () => (game ? groupEvents(game.events) : []),
-    [game?.events]
-  );
+  const groups = useMemo(() => {
+    if (!game) return [];
+    return groupEvents(filterEventLogEvents(game.events));
+  }, [game?.events]);
 
   if (!game) {
     return null;

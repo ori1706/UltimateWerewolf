@@ -2,7 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { I18nManager, Pressable, StyleSheet, Text, View } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import { Swipeable, TouchableOpacity } from 'react-native-gesture-handler';
 import type { RenderItemParams } from 'react-native-draggable-flatlist';
 import { ScaleDecorator } from 'react-native-draggable-flatlist';
 import { PlayerAvatar } from './PlayerAvatar';
@@ -11,6 +11,7 @@ import { colors } from '../theme/colors';
 
 interface SetupPlayerRowProps extends RenderItemParams<Player> {
   expanded: boolean;
+  pickingPhoto: boolean;
   onToggleExpand: (id: string) => void;
   onPickLibrary: (id: string) => void;
   onPickCamera: (id: string) => void;
@@ -23,6 +24,7 @@ export function SetupPlayerRow({
   drag,
   isActive,
   expanded,
+  pickingPhoto,
   onToggleExpand,
   onPickLibrary,
   onPickCamera,
@@ -45,76 +47,95 @@ export function SetupPlayerRow({
     </Pressable>
   );
 
-  const handleRowPress = () => {
+  const handleLongPress = () => {
+    if (expanded) return;
+    swipeRef.current?.close();
+    drag();
+  };
+
+  const handleMenuPress = () => {
     onToggleExpand(item.id);
   };
 
-  const handleLongPress = () => {
-    swipeRef.current?.close();
-    drag();
+  const handleNamePress = () => {
+    onToggleExpand(item.id);
   };
 
   return (
     <ScaleDecorator>
       <View style={[styles.wrap, isActive && styles.wrapActive]}>
-        <Swipeable
-          ref={swipeRef}
-          renderRightActions={I18nManager.isRTL ? undefined : renderDelete}
-          renderLeftActions={I18nManager.isRTL ? renderDelete : undefined}
-          overshootRight={false}
-          overshootLeft={false}
-          friction={2}
-          enabled={!isActive && !expanded}
-        >
-          <View style={[styles.card, expanded && styles.cardExpanded]}>
-            <Pressable
-              onPress={handleRowPress}
-              onLongPress={handleLongPress}
-              delayLongPress={200}
-              style={({ pressed }) => [
-                styles.mainRow,
-                pressed && !isActive && styles.mainRowPressed,
-              ]}
-            >
-              <PlayerAvatar name={item.name} photoUri={item.photoUri} size={36} />
-              <Text style={styles.name} numberOfLines={1}>
-                {item.name}
-              </Text>
-              <View style={[styles.menuBtn, expanded && styles.menuBtnActive]}>
-                <Text style={[styles.menuIcon, expanded && styles.menuIconActive]}>
-                  ⋯
+        <View style={[styles.card, expanded && styles.cardExpanded]}>
+          <Swipeable
+            ref={swipeRef}
+            renderRightActions={I18nManager.isRTL ? undefined : renderDelete}
+            renderLeftActions={I18nManager.isRTL ? renderDelete : undefined}
+            overshootRight={false}
+            overshootLeft={false}
+            friction={2}
+            enabled={!isActive && !expanded}
+          >
+            <View style={styles.mainRow}>
+              <Pressable
+                onPress={handleNamePress}
+                onLongPress={handleLongPress}
+                delayLongPress={250}
+                style={({ pressed }) => [
+                  styles.nameArea,
+                  pressed && !isActive && styles.nameAreaPressed,
+                ]}
+              >
+                <PlayerAvatar name={item.name} photoUri={item.photoUri} size={36} />
+                <Text style={styles.name} numberOfLines={1}>
+                  {item.name}
                 </Text>
-              </View>
-            </Pressable>
+              </Pressable>
+              <Pressable
+                onPress={handleMenuPress}
+                hitSlop={8}
+                style={({ pressed }) => [
+                  styles.menuBtn,
+                  expanded && styles.menuBtnActive,
+                  pressed && styles.menuBtnPressed,
+                ]}
+              >
+                <Text style={[styles.menuIcon, expanded && styles.menuIconActive]}>⋯</Text>
+              </Pressable>
+            </View>
+          </Swipeable>
 
-            {expanded ? (
-              <View style={styles.options}>
-                <Pressable
+          {expanded ? (
+            <View style={styles.options}>
+              <TouchableOpacity
+                style={styles.optionBtn}
+                activeOpacity={0.65}
+                disabled={pickingPhoto}
+                onPress={() => onPickLibrary(item.id)}
+              >
+                <Text style={styles.optionText}>{t('setup.photoFromLibrary')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.optionBtn}
+                activeOpacity={0.65}
+                disabled={pickingPhoto}
+                onPress={() => onPickCamera(item.id)}
+              >
+                <Text style={styles.optionText}>{t('setup.photoFromCamera')}</Text>
+              </TouchableOpacity>
+              {item.photoUri ? (
+                <TouchableOpacity
                   style={styles.optionBtn}
-                  onPress={() => onPickLibrary(item.id)}
+                  activeOpacity={0.65}
+                  disabled={pickingPhoto}
+                  onPress={() => onRemovePhoto(item.id)}
                 >
-                  <Text style={styles.optionText}>{t('setup.photoFromLibrary')}</Text>
-                </Pressable>
-                <Pressable
-                  style={styles.optionBtn}
-                  onPress={() => onPickCamera(item.id)}
-                >
-                  <Text style={styles.optionText}>{t('setup.photoFromCamera')}</Text>
-                </Pressable>
-                {item.photoUri ? (
-                  <Pressable
-                    style={styles.optionBtn}
-                    onPress={() => onRemovePhoto(item.id)}
-                  >
-                    <Text style={[styles.optionText, styles.optionDanger]}>
-                      {t('setup.removePhoto')}
-                    </Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-          </View>
-        </Swipeable>
+                  <Text style={[styles.optionText, styles.optionDanger]}>
+                    {t('setup.removePhoto')}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+            </View>
+          ) : null}
+        </View>
       </View>
     </ScaleDecorator>
   );
@@ -141,12 +162,20 @@ const styles = StyleSheet.create({
   mainRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    minHeight: 52,
+    backgroundColor: colors.surface,
+  },
+  nameArea: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingLeft: 10,
+    paddingRight: 4,
     gap: 10,
     minHeight: 52,
   },
-  mainRowPressed: {
+  nameAreaPressed: {
     backgroundColor: colors.surfaceElevated,
   },
   name: {
@@ -156,13 +185,17 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   menuBtn: {
-    width: 32,
-    height: 32,
+    width: 44,
+    height: 44,
+    marginRight: 4,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
   menuBtnActive: {
+    backgroundColor: colors.surfaceElevated,
+  },
+  menuBtnPressed: {
     backgroundColor: colors.surfaceElevated,
   },
   menuIcon: {
@@ -180,9 +213,10 @@ const styles = StyleSheet.create({
     borderTopColor: colors.border,
     paddingVertical: 4,
     paddingHorizontal: 6,
+    backgroundColor: colors.surface,
   },
   optionBtn: {
-    paddingVertical: 11,
+    paddingVertical: 13,
     paddingHorizontal: 10,
     borderRadius: 8,
   },

@@ -1,56 +1,65 @@
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
-import { LanguageSwitcher } from '@/src/components/LanguageSwitcher';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
 import { routeForPhase } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
-import { useSettingsStore } from '@/src/store/settingsStore';
 import { colors } from '@/src/theme/colors';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
-  const locale = useSettingsStore((s) => s.locale);
-  const setLocale = useSettingsStore((s) => s.setLocale);
   const game = useGameStore((s) => s.game);
   const hasActiveGame = game && game.phase !== 'gameOver' && game.phase !== 'setup';
 
   return (
-    <ScreenLayout scroll={false}>
-      <View style={styles.hero}>
-        <Text style={styles.emoji}>🐺</Text>
-        <Text style={styles.title}>{t('app.title')}</Text>
-        <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
-      </View>
+    <ScreenLayout scroll={false} style={styles.screen}>
+      <View style={styles.main}>
+        <View style={styles.hero}>
+          <Text style={styles.emoji}>🐺</Text>
+          <Text style={styles.title}>{t('app.title')}</Text>
+          <Text style={styles.subtitle}>{t('app.subtitle')}</Text>
+        </View>
 
-      <LanguageSwitcher locale={locale} onChange={setLocale} />
-
-      <View style={styles.actions}>
-        <Button
-          label={t('home.newGame')}
-          onPress={() => router.push('/setup/players')}
-        />
-        {hasActiveGame ? (
+        <View style={styles.actions}>
           <Button
-            label={t('home.continueGame')}
-            variant="secondary"
-            onPress={() => {
-              router.push(routeForPhase(game!.phase));
-            }}
+            label={t('home.newGame')}
+            onPress={() => router.push('/setup/players')}
           />
-        ) : null}
+          {hasActiveGame ? (
+            <Button
+              label={t('home.continueGame')}
+              variant="secondary"
+              onPress={() => {
+                router.push(routeForPhase(game!.phase));
+              }}
+            />
+          ) : null}
+          <Button
+            label={t('home.settings')}
+            variant="ghost"
+            onPress={() => router.push('/settings')}
+          />
+        </View>
       </View>
 
-      <View style={styles.infoBox}>
-        <Text style={styles.infoTitle}>{t('home.howToPlay')}</Text>
-        <Text style={styles.infoText}>{t('home.howToPlayText')}</Text>
-      </View>
+      <Pressable
+        onPress={() => router.push('/how-to-play')}
+        style={({ pressed }) => [styles.howToPlayLink, pressed && styles.howToPlayPressed]}
+      >
+        <Text style={styles.howToPlayText}>{t('home.howToPlay')}</Text>
+      </Pressable>
     </ScreenLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  main: {
+    flex: 1,
+  },
   hero: {
     alignItems: 'center',
     marginTop: 40,
@@ -74,24 +83,18 @@ const styles = StyleSheet.create({
   },
   actions: {
     gap: 12,
-    marginBottom: 32,
   },
-  infoBox: {
-    backgroundColor: colors.surface,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
+  howToPlayLink: {
+    alignItems: 'center',
+    paddingVertical: 16,
+    marginTop: 8,
   },
-  infoTitle: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
+  howToPlayPressed: {
+    opacity: 0.7,
   },
-  infoText: {
-    color: colors.textMuted,
-    fontSize: 15,
-    lineHeight: 22,
+  howToPlayText: {
+    color: colors.primary,
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

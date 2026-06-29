@@ -33,9 +33,6 @@ export function PassPhoneGate({
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       setRevealed(true);
       onReveal?.();
-      if (!children) {
-        onReady();
-      }
     }, 600);
   };
 
@@ -47,15 +44,34 @@ export function PassPhoneGate({
     return (
       <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
         <View style={styles.container}>
-          {children}
-          <Button
-            label={t('passPhone.gotIt')}
-            onPress={() => {
-              setRevealed(false);
-              onReady();
-            }}
-            style={styles.hideBtn}
-          />
+          <View style={styles.mainWithContent}>
+            {children}
+          </View>
+          <View style={styles.footer}>
+            <Button
+              label={t('passPhone.gotIt')}
+              onPress={() => {
+                setRevealed(false);
+                onReady();
+              }}
+              style={styles.fullWidthBtn}
+            />
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (revealed) {
+    return (
+      <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+        <View style={styles.container}>
+          <View style={styles.main}>
+            <Text style={styles.title}>{t('passPhone.privateAction')}</Text>
+          </View>
+          <View style={styles.footer}>
+            <Button label={t('common.continue')} onPress={onReady} style={styles.fullWidthBtn} />
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -64,26 +80,32 @@ export function PassPhoneGate({
   return (
     <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
       <View style={styles.container}>
-      <Text style={styles.title}>{t('passPhone.title')}</Text>
-      <Text style={styles.subtitle}>{t('passPhone.subtitle')}</Text>
-      <PlayerAvatar name={playerName} photoUri={photoUri} size={100} />
-      <Text style={styles.name}>{playerName}</Text>
+        <View style={styles.main}>
+          <Text style={styles.title}>{t('passPhone.title')}</Text>
+          <Text style={styles.subtitle}>{t('passPhone.subtitle')}</Text>
+          <PlayerAvatar name={playerName} photoUri={photoUri} size={100} />
+          <Text style={styles.name}>{playerName}</Text>
 
-      {holdToReveal ? (
-        <Pressable
-          onPressIn={startHold}
-          onPressOut={endHold}
-          style={styles.holdArea}
-        >
-          <Text style={styles.holdText}>{t('passPhone.holdToReveal')}</Text>
-        </Pressable>
-      ) : (
-        <Button
-          label={t('passPhone.tapWhenReady', { name: playerName })}
-          onPress={onReady}
-          style={styles.readyBtn}
-        />
-      )}
+          {holdToReveal ? (
+            <Pressable
+              onPressIn={startHold}
+              onPressOut={endHold}
+              style={styles.holdArea}
+            >
+              <Text style={styles.holdText}>{t('passPhone.holdToReveal')}</Text>
+            </Pressable>
+          ) : null}
+        </View>
+
+        {!holdToReveal ? (
+          <View style={styles.footer}>
+            <Button
+              label={t('passPhone.tapWhenReady', { name: playerName })}
+              onPress={onReady}
+              style={styles.fullWidthBtn}
+            />
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -96,9 +118,16 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
+    padding: 24,
+  },
+  main: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+  },
+  mainWithContent: {
+    flex: 1,
+    justifyContent: 'center',
   },
   title: {
     color: colors.textMuted,
@@ -118,7 +147,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: '700',
     marginTop: 16,
-    marginBottom: 40,
   },
   holdArea: {
     backgroundColor: colors.surfaceElevated,
@@ -135,11 +163,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-  readyBtn: {
-    width: '100%',
+  footer: {
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
   },
-  hideBtn: {
+  fullWidthBtn: {
     width: '100%',
-    marginTop: 24,
   },
 });

@@ -1,6 +1,6 @@
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   Alert,
@@ -15,6 +15,7 @@ import DraggableFlatList, {
 } from 'react-native-draggable-flatlist';
 import * as Haptics from 'expo-haptics';
 import { Button } from '@/src/components/Button';
+import { RosterPreviewModal } from '@/src/components/RosterPreviewModal';
 import { SetupPlayerRow } from '@/src/components/SetupPlayerRow';
 import { ScreenLayout } from '@/src/components/ScreenLayout';
 import { MIN_PLAYERS } from '@/src/game/rules';
@@ -37,7 +38,12 @@ export default function PlayersSetupScreen() {
 
   const [name, setName] = useState('');
   const [rosterName, setRosterName] = useState('');
+  const [savingRoster, setSavingRoster] = useState(false);
+  const [previewRosterId, setPreviewRosterId] = useState<string | null>(null);
+  const [loadingRoster, setLoadingRoster] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [pickingPhoto, setPickingPhoto] = useState(false);
+  const pickingPhotoRef = useRef(false);
   const [listData, setListData] = useState<Player[]>(setupPlayers);
 
   useEffect(() => {
@@ -53,29 +59,41 @@ export default function PlayersSetupScreen() {
 
   const pickPhoto = useCallback(
     async (playerId: string, useCamera: boolean) => {
-      const perm = useCamera
-        ? await ImagePicker.requestCameraPermissionsAsync()
-        : await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
+      if (pickingPhotoRef.current) return;
 
-      const result = useCamera
-        ? await ImagePicker.launchCameraAsync({
-            quality: 0.8,
-            allowsEditing: true,
-            aspect: [1, 1],
-          })
-        : await ImagePicker.launchImageLibraryAsync({
-            quality: 0.8,
-            allowsEditing: true,
-            aspect: [1, 1],
-          });
+      pickingPhotoRef.current = true;
+      setPickingPhoto(true);
+      try {
+        const perm = useCamera
+          ? await ImagePicker.requestCameraPermissionsAsync()
+          : await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!perm.granted) {
+          Alert.alert(t('setup.photoPermissionTitle'), t('setup.photoPermissionMessage'));
+          return;
+        }
 
-      if (!result.canceled && result.assets[0]) {
-        const uri = await persistPhotoUri(result.assets[0].uri);
-        updatePlayer(playerId, { photoUri: uri });
+        const result = useCamera
+          ? await ImagePicker.launchCameraAsync({
+              quality: 0.8,
+              allowsEditing: true,
+              aspect: [1, 1],
+            })
+          : await ImagePicker.launchImageLibraryAsync({
+              quality: 0.8,
+              allowsEditing: true,
+              aspect: [1, 1],
+            });
+
+        if (!result.canceled && result.assets[0]) {
+          const uri = await persistPhotoUri(result.assets[0].uri);
+          updatePlayer(playerId, { photoUri: uri });
+        }
+      } finally {
+        pickingPhotoRef.current = false;
+        setPickingPhoto(false);
       }
     },
-    [updatePlayer]
+    [t, updatePlayer]
   );
 
   const handleAdd = () => {
@@ -112,6 +130,7 @@ export default function PlayersSetupScreen() {
       <SetupPlayerRow
         {...params}
         expanded={expandedId === params.item.id}
+        pickingPhoto={pickingPhoto}
         onToggleExpand={toggleExpand}
         onPickLibrary={(id) => pickPhoto(id, false)}
         onPickCamera={(id) => pickPhoto(id, true)}
@@ -122,10 +141,40 @@ export default function PlayersSetupScreen() {
         }}
       />
     ),
-    [expandedId, pickPhoto, removePlayer, toggleExpand, updatePlayer]
+    [expandedId, pickPhoto, pickingPhoto, removePlayer, toggleExpand, updatePlayer]
   );
 
   const canContinue = setupPlayers.length >= MIN_PLAYERS;
+
+  const previewRoster = previewRosterId
+    ? savedRosters.find((r) => r.id === previewRosterId) ?? null
+    : null;
+
+  const handleSaveRoster = async () => {
+    const trimmed = rosterName.trim();
+    if (!trimmed || setupPlayers.length === 0 || savingRoster) return;
+
+    setSavingRoster(true);
+    try {
+      await saveRoster(trimmed);
+      setRosterName('');
+    } finally {
+      setSavingRoster(false);
+    }
+  };
+
+  const handleLoadRoster = async () => {
+    if (!previewRosterId || loadingRoster) return;
+
+    setLoadingRoster(true);
+    try {
+      await loadRoster(previewRosterId);
+      setPreviewRosterId(null);
+      setExpandedId(null);
+    } finally {
+      setLoadingRoster(false);
+    }
+  };
 
   const listHeader = (
     <>
@@ -164,28 +213,29 @@ export default function PlayersSetupScreen() {
         <Button
           label={t('setup.saveRoster')}
           variant="secondary"
-          onPress={() => {
-            if (!rosterName.trim() || setupPlayers.length === 0) return;
-            saveRoster(rosterName.trim());
-            setRosterName('');
-          }}
+          onPress={() => void handleSaveRoster()}
           style={styles.addBtn}
           disabled={setupPlayers.length === 0}
+          loading={savingRoster}
         />
       </View>
       {savedRosters.map((roster) => (
         <View key={roster.id} style={styles.rosterRow}>
-          <Text style={styles.rosterName}>
-            {roster.name} ({roster.players.length})
-          </Text>
-          <View style={styles.rosterActions}>
-            <Pressable onPress={() => loadRoster(roster.id)}>
-              <Text style={styles.link}>{t('setup.loadRoster')}</Text>
-            </Pressable>
-            <Pressable onPress={() => deleteRoster(roster.id)}>
-              <Text style={styles.deleteText}>{t('common.delete')}</Text>
-            </Pressable>
-          </View>
+          <Pressable
+            style={styles.rosterMain}
+            onPress={() => setPreviewRosterId(roster.id)}
+          >
+            <Text style={styles.rosterName}>
+              {roster.name} ({roster.players.length})
+            </Text>
+            <Text style={styles.rosterTapHint}>{t('setup.rosterTapHint')}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void deleteRoster(roster.id)}
+            hitSlop={8}
+          >
+            <Text style={styles.deleteText}>{t('common.delete')}</Text>
+          </Pressable>
         </View>
       ))}
     </View>
@@ -210,7 +260,7 @@ export default function PlayersSetupScreen() {
         keyExtractor={(item) => item.id}
         renderItem={renderPlayer}
         onDragEnd={handleDragEnd}
-        extraData={expandedId}
+        extraData={`${expandedId}-${pickingPhoto}`}
         ListHeaderComponent={listHeader}
         ListFooterComponent={listFooter}
         contentContainerStyle={styles.listContent}
@@ -218,6 +268,13 @@ export default function PlayersSetupScreen() {
         activationDistance={12}
         autoscrollThreshold={80}
         autoscrollSpeed={120}
+      />
+      <RosterPreviewModal
+        roster={previewRoster}
+        visible={previewRoster !== null}
+        loading={loadingRoster}
+        onClose={() => setPreviewRosterId(null)}
+        onLoad={() => void handleLoadRoster()}
       />
     </ScreenLayout>
   );
@@ -291,21 +348,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    gap: 12,
+  },
+  rosterMain: {
+    flex: 1,
   },
   rosterName: {
     color: colors.text,
     fontSize: 16,
-  },
-  rosterActions: {
-    flexDirection: 'row',
-    gap: 16,
-  },
-  link: {
-    color: colors.primary,
     fontWeight: '600',
+  },
+  rosterTapHint: {
+    color: colors.textMuted,
+    fontSize: 13,
+    marginTop: 2,
   },
   deleteText: {
     color: colors.danger,
     fontSize: 13,
+    fontWeight: '600',
   },
 });

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { GameScreenLayout } from '@/src/components/GameScreenLayout';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
@@ -31,6 +31,8 @@ export default function VoteScreen() {
     return null;
   }
 
+  const allowSkip = game.settings.allowVoteSkip;
+
   if (!gateOpen) {
     return (
       <PassPhoneGate
@@ -42,7 +44,39 @@ export default function VoteScreen() {
   }
 
   return (
-    <GameScreenLayout scroll>
+    <GameScreenLayout
+      scroll
+      footer={
+        allowSkip ? (
+          <View style={styles.footer}>
+            <Button
+              label={t('vote.skipVote')}
+              variant="secondary"
+              onPress={() => submitVote(voter.id, null)}
+              style={styles.footerBtn}
+            />
+            <Button
+              label={t('common.confirm')}
+              onPress={() => {
+                if (selected.length !== 1) return;
+                submitVote(voter.id, selected[0]);
+              }}
+              disabled={selected.length !== 1}
+              style={styles.footerBtn}
+            />
+          </View>
+        ) : (
+          <Button
+            label={t('common.confirm')}
+            onPress={() => {
+              if (selected.length !== 1) return;
+              submitVote(voter.id, selected[0]);
+            }}
+            disabled={selected.length !== 1}
+          />
+        )
+      }
+    >
       <Text style={styles.phase}>
         {t('vote.title', { number: game.dayNumber })}
       </Text>
@@ -54,22 +88,14 @@ export default function VoteScreen() {
         })}
       </Text>
 
+      {allowSkip ? <Text style={styles.skipHint}>{t('vote.skipHint')}</Text> : null}
+
       <PlayerPicker
         players={game.players}
         selectedIds={selected}
         onToggle={(id) => setSelected([id])}
         maxSelections={1}
         excludeIds={[voter.id]}
-      />
-
-      <Button
-        label={t('common.confirm')}
-        onPress={() => {
-          if (selected.length !== 1) return;
-          submitVote(voter.id, selected[0]);
-        }}
-        disabled={selected.length !== 1}
-        style={styles.btn}
       />
     </GameScreenLayout>
   );
@@ -95,7 +121,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 16,
   },
-  btn: {
-    marginTop: 24,
+  skipHint: {
+    color: colors.textMuted,
+    fontSize: 14,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  footer: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  footerBtn: {
+    flex: 1,
   },
 });

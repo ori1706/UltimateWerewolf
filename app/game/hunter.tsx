@@ -42,7 +42,20 @@ export default function HunterScreen() {
   }
 
   return (
-    <GameScreenLayout scroll>
+    <GameScreenLayout
+      scroll
+      footer={
+        <Button
+          label={t('common.confirm')}
+          onPress={() => {
+            if (selected.length !== 1) return;
+            submitHunterShot(selected[0]);
+          }}
+          disabled={selected.length !== 1}
+          variant="danger"
+        />
+      }
+    >
       <Text style={styles.title}>{t('hunter.title')}</Text>
       <Text style={styles.subtitle}>
         {t('hunter.subtitle', { name: hunter.name })}
@@ -54,17 +67,6 @@ export default function HunterScreen() {
         onToggle={(id) => setSelected([id])}
         maxSelections={1}
         excludeIds={[hunter.id]}
-      />
-
-      <Button
-        label={t('common.confirm')}
-        onPress={() => {
-          if (selected.length !== 1) return;
-          submitHunterShot(selected[0]);
-        }}
-        disabled={selected.length !== 1}
-        variant="danger"
-        style={styles.btn}
       />
     </GameScreenLayout>
   );
@@ -81,8 +83,5 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: 16,
     marginBottom: 24,
-  },
-  btn: {
-    marginTop: 24,
   },
 });

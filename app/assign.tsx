@@ -1,8 +1,6 @@
-import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, Text, View, ScrollView } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
-import { Button } from '@/src/components/Button';
 import { PlayerCard } from '@/src/components/PlayerCard';
 import { getFellowWerewolves } from '@/src/game/engine';
 import { getRoleTeam } from '@/src/game/roles';
@@ -14,11 +12,6 @@ export default function AssignScreen() {
   const { t } = useTranslation();
   const game = useGamePhaseScreen('roleAssign');
   const advanceRoleAssign = useGameStore((s) => s.advanceRoleAssign);
-  const [gateOpen, setGateOpen] = useState(false);
-
-  useEffect(() => {
-    setGateOpen(false);
-  }, [game?.roleAssignIndex]);
 
   if (!game) {
     return null;
@@ -30,82 +23,68 @@ export default function AssignScreen() {
   const fellowWolves =
     role === 'werewolf' ? getFellowWerewolves(game, player.id) : [];
 
-  if (!gateOpen) {
-    return (
-      <PassPhoneGate
-        playerName={player.name}
-        photoUri={player.photoUri}
-        onReady={() => setGateOpen(true)}
-        holdToReveal
-      />
-    );
-  }
-
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
+    <PassPhoneGate
+      key={player.id}
+      playerName={player.name}
+      photoUri={player.photoUri}
+      holdToReveal
+      onReady={() => advanceRoleAssign()}
     >
-      <Text style={styles.progress}>
-        {t('assign.progress', {
-          current: game.roleAssignIndex + 1,
-          total: game.players.length,
-        })}
-      </Text>
-      <Text style={styles.label}>{t('assign.yourRole')}</Text>
-      <Text style={styles.role}>{t(`roles.${role}`)}</Text>
-      <Text style={styles.desc}>{t(`roles.descriptions.${role}`)}</Text>
-      <View style={styles.teamBadge}>
-        <Text style={styles.teamLabel}>{t('assign.team')}</Text>
-        <Text style={styles.team}>{t(`assign.teams.${team}`)}</Text>
-      </View>
-
-      {role === 'werewolf' ? (
-        <View style={styles.wolfSection}>
-          {fellowWolves.length === 0 ? (
-            <Text style={styles.wolfTitle}>{t('assign.onlyWerewolf')}</Text>
-          ) : (
-            <>
-              <Text style={styles.wolfTitle}>{t('assign.fellowWerewolves')}</Text>
-              {fellowWolves.map((wolf) => (
-                <PlayerCard key={wolf.id} player={wolf} />
-              ))}
-            </>
-          )}
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.progress}>
+          {t('assign.progress', {
+            current: game.roleAssignIndex + 1,
+            total: game.players.length,
+          })}
+        </Text>
+        <Text style={styles.label}>{t('assign.yourRole')}</Text>
+        <Text style={styles.role}>{t(`roles.${role}`)}</Text>
+        <Text style={styles.desc}>{t(`roles.descriptions.${role}`)}</Text>
+        <View style={styles.teamBadge}>
+          <Text style={styles.teamLabel}>{t('assign.team')}</Text>
+          <Text style={styles.team}>{t(`assign.teams.${team}`)}</Text>
         </View>
-      ) : null}
 
-      <Button
-        label={t('passPhone.gotIt')}
-        onPress={() => {
-          advanceRoleAssign();
-        }}
-        style={styles.btn}
-      />
-    </ScrollView>
+        {role === 'werewolf' ? (
+          <View style={styles.wolfSection}>
+            {fellowWolves.length === 0 ? (
+              <Text style={styles.wolfTitle}>{t('assign.onlyWerewolf')}</Text>
+            ) : (
+              <>
+                <Text style={styles.wolfTitle}>{t('assign.fellowWerewolves')}</Text>
+                {fellowWolves.map((wolf) => (
+                  <PlayerCard key={wolf.id} player={wolf} />
+                ))}
+              </>
+            )}
+          </View>
+        ) : null}
+      </ScrollView>
+    </PassPhoneGate>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
   scrollContent: {
     flexGrow: 1,
-    padding: 24,
-    justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 16,
   },
   progress: {
     color: colors.textMuted,
     fontSize: 14,
     marginBottom: 24,
+    textAlign: 'center',
   },
   label: {
     color: colors.textMuted,
     fontSize: 16,
     marginBottom: 8,
+    textAlign: 'center',
   },
   role: {
     color: colors.text,
@@ -129,6 +108,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     marginBottom: 16,
     alignItems: 'center',
+    width: '100%',
   },
   teamLabel: {
     color: colors.textMuted,
@@ -141,7 +121,7 @@ const styles = StyleSheet.create({
   },
   wolfSection: {
     width: '100%',
-    marginBottom: 24,
+    marginBottom: 8,
   },
   wolfTitle: {
     color: colors.werewolf,
@@ -149,8 +129,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginBottom: 12,
     textAlign: 'center',
-  },
-  btn: {
-    width: '100%',
   },
 });

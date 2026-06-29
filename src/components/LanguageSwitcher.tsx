@@ -33,7 +33,7 @@ export function LanguageSwitcher({ locale, onChange }: LanguageSwitcherProps) {
 
 const styles = StyleSheet.create({
   wrap: {
-    marginBottom: 24,
+    marginBottom: 0,
   },
   label: {
     color: colors.textMuted,

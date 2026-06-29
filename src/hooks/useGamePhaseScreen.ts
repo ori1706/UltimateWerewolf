@@ -9,6 +9,7 @@ const PHASE_ROUTES: Record<Phase, Href> = {
   night: '/game/night',
   day: '/game/day',
   vote: '/game/vote',
+  dayRecap: '/game/day-recap',
   hunter: '/game/hunter',
   gameOver: '/results',
 };

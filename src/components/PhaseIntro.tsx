@@ -21,7 +21,12 @@ export function PhaseIntro({ variant, dayNumber, onContinue }: PhaseIntroProps) 
   };
 
   return (
-    <GameScreenLayout contentStyle={styles.content}>
+    <GameScreenLayout
+      contentStyle={styles.content}
+      footer={
+        <Button label={t('phaseIntro.begin')} onPress={handleContinue} />
+      }
+    >
       <View style={styles.center}>
         <Text style={styles.icon}>{isNight ? '🌙' : '☀️'}</Text>
         <Text style={[styles.title, isNight && styles.titleNight]}>
@@ -33,11 +38,6 @@ export function PhaseIntro({ variant, dayNumber, onContinue }: PhaseIntroProps) 
           {t(isNight ? 'phaseIntro.nightSubtitle' : 'phaseIntro.daySubtitle')}
         </Text>
       </View>
-      <Button
-        label={t('phaseIntro.continue')}
-        onPress={handleContinue}
-        style={styles.btn}
-      />
     </GameScreenLayout>
   );
 }
@@ -45,7 +45,6 @@ export function PhaseIntro({ variant, dayNumber, onContinue }: PhaseIntroProps) 
 const styles = StyleSheet.create({
   content: {
     flexGrow: 1,
-    justifyContent: 'space-between',
   },
   center: {
     flex: 1,
@@ -73,8 +72,5 @@ const styles = StyleSheet.create({
     lineHeight: 26,
     textAlign: 'center',
     maxWidth: 320,
-  },
-  btn: {
-    marginTop: 24,
   },
 });

@@ -18,6 +18,7 @@ export type Phase =
   | 'night'
   | 'day'
   | 'vote'
+  | 'dayRecap'
   | 'hunter'
   | 'gameOver';
 
@@ -25,9 +26,11 @@ export type NightActionType =
   | 'cupid'
   | 'masonReveal'
   | 'minionReveal'
+  | 'loverReveal'
   | 'bodyguard'
   | 'werewolfKill'
-  | 'seerInspect';
+  | 'seerInspect'
+  | 'pass';
 
 export type GameEventType =
   | 'cupidLinked'
@@ -48,6 +51,8 @@ export type GameEventType =
   | 'noDeathsNight'
   | 'noDeathsDay'
   | 'voteTie'
+  | 'voteSkipped'
+  | 'dayVoteResolved'
   | 'gameEnded';
 
 export interface GameEvent {
@@ -89,6 +94,12 @@ export interface GameSettings {
   revealDeadRoles: boolean;
   /** Per-action reveal modes for roles that inspect or learn about others. */
   roleReveal: RoleRevealSettings;
+  /** When enabled, day phase shows a countdown for discussion time. */
+  deliberationTimerEnabled: boolean;
+  /** Discussion timer length in seconds (default 2 minutes). */
+  deliberationTimerSeconds: number;
+  /** When enabled, living players may abstain during the day vote. */
+  allowVoteSkip: boolean;
 }
 
 export type RoleCounts = Record<RoleId, number>;

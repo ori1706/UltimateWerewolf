@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { StyleSheet, Text, View } from 'react-native';
 import { Button } from '@/src/components/Button';
 import { GameScreenLayout } from '@/src/components/GameScreenLayout';
+import { NightActorBanner } from '@/src/components/NightActorBanner';
 import { PassPhoneGate } from '@/src/components/PassPhoneGate';
 import { PhaseIntro } from '@/src/components/PhaseIntro';
 import { PlayerCard } from '@/src/components/PlayerCard';
@@ -11,12 +12,14 @@ import {
   canBodyguardProtect,
   getCurrentNightStep,
   getLivingWerewolfIds,
+  getLoverPartner,
   getMasonPartners,
   getPriorWolfVoteCounts,
   getWerewolves,
 } from '@/src/game/engine';
 import { getPlayerById } from '@/src/game/rules';
 import { formatInspectionResultLabel, inspectPlayer } from '@/src/game/roleReveal';
+import type { RoleId } from '@/src/game/types';
 import { useGamePhaseScreen } from '@/src/hooks/useGamePhaseScreen';
 import { useGameStore } from '@/src/store/gameStore';
 import { colors } from '@/src/theme/colors';
@@ -29,6 +32,7 @@ export default function NightScreen() {
   const [gateOpen, setGateOpen] = useState(false);
   const [selected, setSelected] = useState<string[]>([]);
   const [seerResult, setSeerResult] = useState<string | null>(null);
+  const [seerTargetId, setSeerTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     setPhaseIntroDismissed(false);
@@ -41,6 +45,7 @@ export default function NightScreen() {
     setGateOpen(false);
     setSelected([]);
     setSeerResult(null);
+    setSeerTargetId(null);
   }, [game?.currentNightStepIndex]);
 
   if (!game) {
@@ -65,6 +70,7 @@ export default function NightScreen() {
   const resetSelection = () => {
     setSelected([]);
     setSeerResult(null);
+    setSeerTargetId(null);
     setGateOpen(false);
   };
 
@@ -79,12 +85,16 @@ export default function NightScreen() {
         return t('night.mason');
       case 'minionReveal':
         return t('night.minion');
+      case 'loverReveal':
+        return t('night.loverReveal');
       case 'bodyguard':
         return t('night.bodyguard');
       case 'werewolfKill':
         return t('night.werewolf');
       case 'seerInspect':
         return t('night.seer');
+      case 'pass':
+        return t('night.noActionPass');
       default:
         return '';
     }
@@ -100,8 +110,7 @@ export default function NightScreen() {
 
       const inspection = inspectPlayer(target, 'seerInspect', game.settings);
       setSeerResult(formatInspectionResultLabel(inspection, target.name, t));
-      submitNightAction({ type: 'seerInspect', targetIds: selected });
-      setTimeout(resetSelection, 2500);
+      setSeerTargetId(selected[0]);
       return;
     }
 
@@ -112,6 +121,7 @@ export default function NightScreen() {
   if (!gateOpen && actor) {
     return (
       <PassPhoneGate
+        key={`${step.type}-${actor.id}-${game.currentNightStepIndex}`}
         playerName={actor.name}
         photoUri={actor.photoUri}
         onReady={() => setGateOpen(true)}
@@ -119,23 +129,69 @@ export default function NightScreen() {
     );
   }
 
+  const nightHeader = (
+    <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
+  );
+
+  const getActorDisplayRole = (): RoleId | undefined => {
+    if (!actor?.role) return undefined;
+    if (
+      step.type === 'seerInspect' &&
+      actor.role === 'apprenticeSeer' &&
+      game.apprenticePromoted
+    ) {
+      return 'seer';
+    }
+    return actor.role;
+  };
+
+  const actorContent = actor ? (
+    <NightActorBanner player={actor} displayRole={getActorDisplayRole()} />
+  ) : null;
+
+  if (step.type === 'pass' && actor) {
+    return (
+      <GameScreenLayout
+        scroll
+        header={nightHeader}
+        contentStyle={styles.passContent}
+        footer={
+          <Button
+            label={t('common.continue')}
+            onPress={() => {
+              submitNightAction({ type: 'pass', targetIds: [] });
+              resetSelection();
+            }}
+          />
+        }
+      >
+        {actorContent}
+        <Text style={[styles.instruction, styles.passInstruction]}>{getInstruction()}</Text>
+      </GameScreenLayout>
+    );
+  }
+
   if (step.type === 'masonReveal' && actor) {
     const partners = getMasonPartners(game, actor.id);
     return (
-      <GameScreenLayout scroll>
-        <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
+      <GameScreenLayout
+        scroll
+        header={nightHeader}
+        footer={
+          <Button
+            label={t('common.continue')}
+            onPress={() => {
+              submitNightAction({ type: 'masonReveal', targetIds: partners.map((p) => p.id) });
+              resetSelection();
+            }}
+          />
+        }
+      >
+        {actorContent}
         <Text style={styles.instruction}>{getInstruction()}</Text>
         {partners.map((p) => (
           <PlayerCard key={p.id} player={p} />
         ))}
-        <Button
-          label={t('common.continue')}
-          onPress={() => {
-            submitNightAction({ type: 'masonReveal', targetIds: partners.map((p) => p.id) });
-            resetSelection();
-          }}
-          style={styles.btn}
-        />
       </GameScreenLayout>
     );
   }
@@ -143,20 +199,50 @@ export default function NightScreen() {
   if (step.type === 'minionReveal' && actor) {
     const wolves = getWerewolves(game);
     return (
-      <GameScreenLayout scroll>
-        <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
+      <GameScreenLayout
+        scroll
+        header={nightHeader}
+        footer={
+          <Button
+            label={t('common.continue')}
+            onPress={() => {
+              submitNightAction({ type: 'minionReveal', targetIds: wolves.map((w) => w.id) });
+              resetSelection();
+            }}
+          />
+        }
+      >
+        {actorContent}
         <Text style={styles.instruction}>{getInstruction()}</Text>
         {wolves.map((p) => (
           <PlayerCard key={p.id} player={p} />
         ))}
-        <Button
-          label={t('common.continue')}
-          onPress={() => {
-            submitNightAction({ type: 'minionReveal', targetIds: wolves.map((w) => w.id) });
-            resetSelection();
-          }}
-          style={styles.btn}
-        />
+      </GameScreenLayout>
+    );
+  }
+
+  if (step.type === 'loverReveal' && actor) {
+    const partner = getLoverPartner(game, actor.id);
+    return (
+      <GameScreenLayout
+        scroll
+        header={nightHeader}
+        footer={
+          <Button
+            label={t('common.continue')}
+            onPress={() => {
+              submitNightAction({ type: 'loverReveal', targetIds: partner ? [partner.id] : [] });
+              resetSelection();
+            }}
+          />
+        }
+      >
+        {actorContent}
+        <Text style={styles.instruction}>{getInstruction()}</Text>
+        <Text style={styles.loverHint}>{t('night.loverRevealHint')}</Text>
+        {partner ? (
+          <PlayerCard player={partner} subtitle={t('night.loverPartner')} />
+        ) : null}
       </GameScreenLayout>
     );
   }
@@ -195,8 +281,32 @@ export default function NightScreen() {
     !canBodyguardProtect(game, selected[0]);
 
   return (
-    <GameScreenLayout scroll>
-      <Text style={styles.phase}>{t('night.title', { number: game.dayNumber })}</Text>
+    <GameScreenLayout
+      scroll
+      header={nightHeader}
+      footer={
+        seerResult ? (
+          <Button
+            label={t('common.continue')}
+            onPress={() => {
+              if (!seerTargetId) return;
+              submitNightAction({ type: 'seerInspect', targetIds: [seerTargetId] });
+              resetSelection();
+            }}
+          />
+        ) : (
+          <Button
+            label={t('common.confirm')}
+            onPress={handleConfirm}
+            disabled={
+              (step.type === 'cupid' ? selected.length !== 2 : selected.length !== 1) ||
+              bodyguardBlocked
+            }
+          />
+        )
+      }
+    >
+      {actorContent}
       <Text style={styles.instruction}>{getInstruction()}</Text>
       <Text style={styles.private}>{t('passPhone.privateAction')}</Text>
 
@@ -206,6 +316,7 @@ export default function NightScreen() {
 
       {seerResult ? (
         <View style={styles.seerBox}>
+          <Text style={styles.seerLabel}>{t('night.seerReveal')}</Text>
           <Text style={styles.seerText}>{seerResult}</Text>
         </View>
       ) : (
@@ -222,18 +333,6 @@ export default function NightScreen() {
       {bodyguardBlocked ? (
         <Text style={styles.error}>{t('errors.cannotProtectSame')}</Text>
       ) : null}
-
-      {!seerResult ? (
-        <Button
-          label={t('common.confirm')}
-          onPress={handleConfirm}
-          disabled={
-            (step.type === 'cupid' ? selected.length !== 2 : selected.length !== 1) ||
-            bodyguardBlocked
-          }
-          style={styles.btn}
-        />
-      ) : null}
     </GameScreenLayout>
   );
 }
@@ -245,7 +344,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    marginBottom: 8,
   },
   instruction: {
     color: colors.text,
@@ -263,8 +361,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginBottom: 12,
   },
-  btn: {
-    marginTop: 24,
+  loverHint: {
+    color: colors.lover,
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 20,
+  },
+  passInstruction: {
+    textAlign: 'center',
+    lineHeight: 32,
+  },
+  passContent: {
+    flexGrow: 1,
+    paddingTop: 8,
   },
   seerBox: {
     backgroundColor: colors.surfaceElevated,
@@ -273,6 +382,15 @@ const styles = StyleSheet.create({
     marginTop: 24,
     borderWidth: 2,
     borderColor: colors.primary,
+  },
+  seerLabel: {
+    color: colors.textMuted,
+    fontSize: 14,
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    textAlign: 'center',
+    marginBottom: 12,
   },
   seerText: {
     color: colors.text,

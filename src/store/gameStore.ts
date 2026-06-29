@@ -10,6 +10,7 @@ import type {
   SavedRoster,
 } from '../game/types';
 import {
+  advanceDayRecap,
   advanceRoleAssign,
   createInitialGameState,
   finishHunterPhase,
@@ -25,6 +26,11 @@ import {
   MIN_PLAYERS,
 } from '../game/rules';
 import { DEFAULT_GAME_SETTINGS, mergeGameSettings } from '../game/roleReveal';
+import {
+  deleteRosterPhotos,
+  persistPhotoUri,
+  persistRosterPlayerPhoto,
+} from '../utils/photos';
 
 interface GameStore {
   setupPlayers: Player[];
@@ -42,15 +48,16 @@ interface GameStore {
   resetRoleCounts: () => void;
   setSettings: (settings: Partial<GameSettings>) => void;
 
-  saveRoster: (name: string) => void;
-  loadRoster: (id: string) => void;
-  deleteRoster: (id: string) => void;
+  saveRoster: (name: string) => Promise<void>;
+  loadRoster: (id: string) => Promise<void>;
+  deleteRoster: (id: string) => Promise<void>;
 
   startGame: () => void;
   advanceRoleAssign: () => void;
   submitNightAction: (payload: NightActionPayload) => void;
   beginVoting: () => void;
-  submitVote: (voterId: string, targetId: string) => void;
+  submitVote: (voterId: string, targetId: string | null) => void;
+  advanceDayRecap: () => void;
   submitHunterShot: (targetId: string) => void;
   resetAll: () => void;
 }
@@ -122,26 +129,37 @@ export const useGameStore = create<GameStore>()(
       setSettings: (partial) =>
         set((s) => ({ settings: mergeGameSettings(s.settings, partial) })),
 
-      saveRoster: (name) => {
-        const roster: SavedRoster = {
-          id: createId(),
-          name,
-          players: get().setupPlayers.map(({ id, name: n, photoUri }) => ({
-            id,
-            name: n,
-            photoUri,
-          })),
-        };
+      saveRoster: async (name) => {
+        const rosterId = createId();
+        const setupPlayers = get().setupPlayers;
+
+        const players = await Promise.all(
+          setupPlayers.map(async ({ id, name: playerName, photoUri }) => {
+            let savedPhotoUri = photoUri;
+            if (photoUri) {
+              savedPhotoUri = await persistRosterPlayerPhoto(rosterId, id, photoUri);
+            }
+            return { id, name: playerName, photoUri: savedPhotoUri };
+          })
+        );
+
+        const roster: SavedRoster = { id: rosterId, name, players };
         set((s) => ({ savedRosters: [...s.savedRosters, roster] }));
       },
 
-      loadRoster: (id) => {
+      loadRoster: async (id) => {
         const roster = get().savedRosters.find((r) => r.id === id);
         if (!roster) return;
-        const players: Player[] = roster.players.map((p) => ({
-          ...p,
-          alive: true,
-        }));
+
+        const players: Player[] = await Promise.all(
+          roster.players.map(async (p) => ({
+            id: p.id,
+            name: p.name,
+            alive: true,
+            photoUri: p.photoUri ? await persistPhotoUri(p.photoUri) : undefined,
+          }))
+        );
+
         set({
           setupPlayers: players,
           roleCounts: getDefaultRoleCounts(players.length),
@@ -149,10 +167,12 @@ export const useGameStore = create<GameStore>()(
         });
       },
 
-      deleteRoster: (id) =>
+      deleteRoster: async (id) => {
+        await deleteRosterPhotos(id);
         set((s) => ({
           savedRosters: s.savedRosters.filter((r) => r.id !== id),
-        })),
+        }));
+      },
 
       startGame: () => {
         const { setupPlayers, roleCounts, settings } = get();
@@ -185,6 +205,12 @@ export const useGameStore = create<GameStore>()(
         const { game } = get();
         if (!game) return;
         set({ game: submitVote(game, voterId, targetId) });
+      },
+
+      advanceDayRecap: () => {
+        const { game } = get();
+        if (!game) return;
+        set({ game: advanceDayRecap(game) });
       },
 
       submitHunterShot: (targetId) => {

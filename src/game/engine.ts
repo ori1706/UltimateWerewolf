@@ -90,41 +90,37 @@ export function advanceRoleAssign(state: GameState): GameState {
 
 export function buildNightSteps(state: GameState): NightActionStep[] {
   const steps: NightActionStep[] = [];
-  const isNight1 = state.dayNumber === 0;
+  const isFirstNight = state.dayNumber === 1;
+  const activeSeer = findActiveSeer(state);
 
-  if (isNight1) {
-    const cupid = state.players.find((p) => p.role === 'cupid' && p.alive);
-    if (cupid) {
-      steps.push({ type: 'cupid', actorId: cupid.id, completed: false });
-    }
+  for (const player of state.players) {
+    if (!player.alive || !player.role) continue;
 
-    const masons = state.players.filter((p) => p.role === 'mason' && p.alive);
-    for (const mason of masons) {
-      steps.push({ type: 'masonReveal', actorId: mason.id, completed: false });
-    }
-
-    const minion = state.players.find((p) => p.role === 'minion' && p.alive);
-    if (minion) {
-      steps.push({ type: 'minionReveal', actorId: minion.id, completed: false });
-    }
-  }
-
-  const bodyguard = state.players.find((p) => p.role === 'bodyguard' && p.alive);
-  if (bodyguard) {
-    steps.push({ type: 'bodyguard', actorId: bodyguard.id, completed: false });
-  }
-
-  const wolves = state.players.filter((p) => p.role === 'werewolf' && p.alive);
-  for (const wolf of wolves) {
-    steps.push({ type: 'werewolfKill', actorId: wolf.id, completed: false });
-  }
-
-  const seer = findActiveSeer(state);
-  if (seer) {
-    steps.push({ type: 'seerInspect', actorId: seer.id, completed: false });
+    const stepType = resolveNightStepForPlayer(player, isFirstNight, activeSeer?.id);
+    steps.push({ type: stepType, actorId: player.id, completed: false });
   }
 
   return steps;
+}
+
+function resolveNightStepForPlayer(
+  player: Player,
+  isFirstNight: boolean,
+  activeSeerId?: string
+): NightActionStep['type'] {
+  const { role } = player;
+
+  if (isFirstNight) {
+    if (role === 'cupid') return 'cupid';
+    if (role === 'mason') return 'masonReveal';
+    if (role === 'minion') return 'minionReveal';
+  }
+
+  if (role === 'bodyguard') return 'bodyguard';
+  if (role === 'werewolf') return 'werewolfKill';
+  if (activeSeerId === player.id) return 'seerInspect';
+
+  return 'pass';
 }
 
 export function startNight(state: GameState): GameState {
@@ -298,6 +294,26 @@ export function submitNightAction(
           hidden: true,
         })
       );
+
+      const loverIds = [a, b].sort(
+        (left, right) =>
+          next.players.findIndex((p) => p.id === left) -
+          next.players.findIndex((p) => p.id === right)
+      );
+      const loverSteps: NightActionStep[] = loverIds.map((id) => ({
+        type: 'loverReveal',
+        actorId: id,
+        completed: false,
+      }));
+      const insertAt = next.currentNightStepIndex + 1;
+      next = {
+        ...next,
+        nightSteps: [
+          ...next.nightSteps.slice(0, insertAt),
+          ...loverSteps,
+          ...next.nightSteps.slice(insertAt),
+        ],
+      };
       break;
     }
     case 'masonReveal': {
@@ -326,6 +342,9 @@ export function submitNightAction(
           hidden: true,
         })
       );
+      break;
+    }
+    case 'loverReveal': {
       break;
     }
     case 'bodyguard': {
@@ -360,6 +379,9 @@ export function submitNightAction(
           hidden: true,
         })
       );
+      break;
+    }
+    case 'pass': {
       break;
     }
     case 'seerInspect': {
@@ -541,7 +563,25 @@ export function startVoting(state: GameState): GameState {
   };
 }
 
-export function submitVote(state: GameState, voterId: string, targetId: string): GameState {
+export function submitVote(
+  state: GameState,
+  voterId: string,
+  targetId: string | null
+): GameState {
+  if (targetId === null) {
+    if (!state.settings.allowVoteSkip) return state;
+
+    let next = {
+      ...state,
+      voteStepIndex: state.voteStepIndex + 1,
+    };
+
+    if (next.voteStepIndex >= next.voteSteps.length) {
+      return resolveVote(next);
+    }
+    return next;
+  }
+
   const next = {
     ...state,
     votes: { ...state.votes, [voterId]: targetId },
@@ -552,6 +592,19 @@ export function submitVote(state: GameState, voterId: string, targetId: string):
     return resolveVote(next);
   }
   return next;
+}
+
+type DayVoteResult = 'executed' | 'tie' | 'no_votes';
+
+function buildDayVoteBallots(
+  voteSteps: string[],
+  votes: Record<string, string>
+): Record<string, string> {
+  const ballots: Record<string, string> = {};
+  for (const voterId of voteSteps) {
+    ballots[voterId] = votes[voterId] ?? 'skip';
+  }
+  return ballots;
 }
 
 function resolveVote(state: GameState): GameState {
@@ -574,41 +627,72 @@ function resolveVote(state: GameState): GameState {
     }
   }
 
-  let next = state;
-
+  const ballots = buildDayVoteBallots(state.voteSteps, state.votes);
+  let voteResult: DayVoteResult;
   if (tie || !lynchedId || maxVotes === 0) {
-    next = addEvents(next, [
-      createEvent({
-        phase: 'day',
-        dayNumber: next.dayNumber,
-        type: 'voteTie',
-        hidden: false,
-      }),
-    ]);
+    voteResult = maxVotes === 0 ? 'no_votes' : 'tie';
   } else {
-    next = applyDeaths(next, [lynchedId], 'lynch', 'day');
-
-    const tannerWin = checkTannerWin(lynchedId, next);
-    if (tannerWin) {
-      return endGame(next, tannerWin.winner, tannerWin.reasonKey);
-    }
+    voteResult = 'executed';
   }
 
-  const win = checkWinCondition(next);
+  const lynchedRole = lynchedId
+    ? getPlayerById(state.players, lynchedId)?.role
+    : undefined;
+
+  let next = addEvents(state, [
+    createEvent({
+      phase: 'day',
+      dayNumber: state.dayNumber,
+      type: 'dayVoteResolved',
+      targetIds: lynchedId ? [lynchedId] : [],
+      metadata: {
+        result: voteResult,
+        ballots: JSON.stringify(ballots),
+        ...(lynchedRole ? { executedRole: lynchedRole } : {}),
+      },
+      hidden: false,
+    }),
+  ]);
+
+  if (voteResult !== 'executed' || !lynchedId) {
+    return continueAfterDayVote(next);
+  }
+
+  next = applyDeaths(next, [lynchedId], 'lynch', 'day');
+
+  const tannerWin = checkTannerWin(lynchedId, next);
+  if (tannerWin) {
+    return endGame(next, tannerWin.winner, tannerWin.reasonKey);
+  }
+
+  return continueAfterDayVote(next);
+}
+
+function continueAfterDayVote(state: GameState): GameState {
+  const win = checkWinCondition(state);
   if (win?.winner) {
-    return endGame(next, win.winner, win.reasonKey!);
+    return endGame(state, win.winner, win.reasonKey!);
   }
 
-  if (next.hunterQueue.length > 0) {
+  return { ...state, phase: 'dayRecap' };
+}
+
+export function advanceDayRecap(state: GameState): GameState {
+  const win = checkWinCondition(state);
+  if (win?.winner) {
+    return endGame(state, win.winner, win.reasonKey!);
+  }
+
+  if (state.hunterQueue.length > 0) {
     return {
-      ...next,
+      ...state,
       phase: 'hunter',
-      pendingHunterId: next.hunterQueue[0],
+      pendingHunterId: state.hunterQueue[0],
       hunterReturnPhase: 'night',
     };
   }
 
-  return startNight(next);
+  return startNight(state);
 }
 
 function endGame(state: GameState, winner: WinResult, reasonKey: string): GameState {
@@ -682,6 +766,12 @@ export function finishHunterPhase(state: GameState, targetId: string): GameState
 
 export function getMasonPartners(state: GameState, masonId: string): Player[] {
   return state.players.filter((p) => p.role === 'mason' && p.id !== masonId);
+}
+
+export function getLoverPartner(state: GameState, playerId: string): Player | undefined {
+  const player = getPlayerById(state.players, playerId);
+  if (!player?.loverPartnerId) return undefined;
+  return getPlayerById(state.players, player.loverPartnerId);
 }
 
 export function getPriorWolfVoteCounts(

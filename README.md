@@ -29,3 +29,7 @@ npm run ios     # or npm run android
 ## Core roles (v1)
 
 Werewolf, Villager, Seer, Apprentice Seer, Bodyguard, Hunter, Minion, Tanner, Mason, Cupid
+
+## TODO
+
+- [ ] **Export / import game settings** — As the app gains more configuration options (e.g. seer reveal mode, deliberation timer, vote skip rules, and future variants), add a way to serialize the full ruleset into a compact string that players can copy, paste, and share. Importing that string should restore the same settings on another device or for the next game.
